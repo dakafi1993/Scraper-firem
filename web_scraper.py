@@ -303,55 +303,83 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         all_data.append(name)
                         seen_names.add(name)
             else:  # panorama
-                # Panorama Firm - celý záznam s webem a emailem
+                # Panorama Firm - najít všechny H2 s názvy firem
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
-                
-                # Najít všechny H2 s třídou 'text-h1' - každý představuje jednu firmu
                 h2_elements = soup.find_all('h2', class_=lambda c: c and 'text-h1' in c if c else False)
                 
                 for h2 in h2_elements:
-                    # Získat název firmy
                     name = h2.get_text(strip=True)
                     
                     # Filtrovat nerelevantní názvy
                     if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie') or len(name) < 3:
                         continue
                     
-                    # Najít rodičovský kontejner firmy (obvykle několik úrovní nahoru)
+                    # Najít nejbližší nadřazený <a> tag s odkazem na detail firmy
+                    detail_link = None
                     parent = h2.parent
-                    # Jít nahoru dokud nenajdeme velký kontejner s více informacemi
-                    for _ in range(5):  # Max 5 úrovní nahoru
-                        if parent and parent.name == 'div':
-                            # Zkontrolovat, jestli tento div obsahuje dostatek informací
-                            if len(parent.find_all('a')) > 2:  # Má více linků
+                    for _ in range(10):  # Jít až 10 úrovní nahoru
+                        if parent:
+                            a_tag = parent.find('a', href=lambda h: h and '/firma/' in h)
+                            if a_tag:
+                                detail_link = a_tag.get('href')
+                                if not detail_link.startswith('http'):
+                                    detail_link = f"https://panoramafirm.pl{detail_link}"
                                 break
-                        parent = parent.parent if parent else None
-                    
-                    if not parent:
-                        parent = h2.parent  # Fallback na přímého rodiče
+                            parent = parent.parent
+                        else:
+                            break
                     
                     website = None
                     email = None
                     
-                    # Hledat web v rodičovském kontejneru
-                    for link in parent.find_all('a', href=True):
-                        href = link.get('href', '')
-                        # Skip internal links a social media
-                        if (href.startswith('http') and 
-                            '/firma/' not in href and 
-                            'panoramafirm.pl' not in href and
-                            'facebook.com' not in href and
-                            'linkedin.com' not in href and
-                            'instagram.com' not in href and
-                            'twitter.com' not in href):
-                            website = href
-                            break
-                    
-                    # Hledat email v textu rodičovského kontejneru
-                    text = parent.get_text()
-                    email_match = EMAIL_PATTERN.search(text)
-                    if email_match:
-                        email = email_match.group(0)
+                    # Pokud máme detail link, otevřeme detail firmy
+                    if detail_link:
+                        try:
+                            original_window = driver.current_window_handle
+                            driver.execute_script(f"window.open('{detail_link}', '_blank');")
+                            driver.switch_to.window(driver.window_handles[-1])
+                            time.sleep(2)
+                            
+                            detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
+                            
+                            # Hledat web - obvykle má ikonku nebo text "Strona WWW"
+                            for link in detail_soup.find_all('a', href=True):
+                                href = link.get('href', '')
+                                text_content = link.get_text(strip=True).lower()
+                                
+                                # Najít web link (mimo Panorama a social media)
+                                if (href.startswith('http') and 
+                                    'panoramafirm.pl' not in href and
+                                    '/firma/' not in href and
+                                    'facebook.com' not in href and
+                                    'linkedin.com' not in href and
+                                    'instagram.com' not in href and
+                                    'twitter.com' not in href and
+                                    ('www' in text_content or 'strona' in text_content or len(text_content) < 30)):
+                                    website = href
+                                    break
+                            
+                            # Hledat email na celé stránce detailu
+                            email_match = EMAIL_PATTERN.search(driver.page_source)
+                            if email_match:
+                                potential_email = email_match.group(0)
+                                # Filtrovat nerelevantní emaily
+                                if not any(skip in potential_email.lower() for skip in ['example', 'test@', 'noreply', '@panorama']):
+                                    email = potential_email
+                            
+                            # Zavřít detail a vrátit se zpět
+                            driver.close()
+                            driver.switch_to.window(original_window)
+                            time.sleep(0.5)
+                            
+                        except Exception as e:
+                            # Pokud se něco pokazí, zkus se vrátit na hlavní okno
+                            try:
+                                if len(driver.window_handles) > 1:
+                                    driver.close()
+                                    driver.switch_to.window(driver.window_handles[0])
+                            except:
+                                pass
                     
                     all_data.append({
                         'name': name,
@@ -359,6 +387,9 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         'email': email or ''
                     })
                     seen_names.add(name)
+                    
+                    # Aktualizovat status
+                    scraping_status['message'] = f'📂 Zpracováno {len(all_data)} firem...'
             
             scraping_status['message'] = f'📂 Načteno {len(all_data)} firem... (scroll {i+1}/{scroll_attempts})'
             
