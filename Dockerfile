@@ -21,16 +21,18 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Kopírovat aplikaci
 COPY . .
 
+# Nastavit executable permission na start script
+RUN chmod +x start.sh
+
 # Vytvořit output složku
 RUN mkdir -p output
 
 # Exponovat port
-EXPOSE ${PORT:-8080}
+EXPOSE 8080
 
 # Nastavit proměnné prostředí
 ENV FLASK_APP=web_scraper.py
 ENV PYTHONUNBUFFERED=1
-ENV PORT=${PORT:-8080}
 
-# Spustit pomocí Gunicorn
-CMD gunicorn web_scraper:app --bind 0.0.0.0:${PORT:-8080} --timeout 300
+# Spustit pomocí start scriptu
+CMD ["./start.sh"]
