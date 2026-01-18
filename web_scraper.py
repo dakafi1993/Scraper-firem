@@ -290,9 +290,22 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
             else:  # panorama
                 # Panorama Firm - celý záznam s webem a emailem
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
-                h2_tags = soup.find_all('h2')
                 
-                for h2 in h2_tags:
+                # Hledat všechny karty firem - různé možné selectory
+                company_cards = soup.find_all('li', class_=lambda c: c and 'company-item' in str(c) if c else False)
+                if not company_cards:
+                    company_cards = soup.find_all('article')
+                if not company_cards:
+                    company_cards = soup.find_all('div', class_=lambda c: c and 'company' in str(c).lower() if c else False)
+                
+                for card in company_cards:
+                    # Najít název firmy
+                    h2 = card.find('h2')
+                    if not h2:
+                        h2 = card.find('h3')
+                    if not h2:
+                        continue
+                    
                     a_tag = h2.find('a')
                     if not a_tag:
                         continue
@@ -303,40 +316,34 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie'):
                         continue
                     
-                    # Najít rodičovský element s kontakty
-                    parent = h2.find_parent()
-                    while parent and parent.name != 'article':
-                        parent = parent.find_parent()
+                    website = ''
+                    email = ''
                     
-                    website = None
-                    email = None
+                    # Hledat web - všechny linky v kartě
+                    all_links = card.find_all('a', href=True)
+                    for link in all_links:
+                        href = link.get('href', '')
+                        # Externí link (ne panoramafirm, ne prázdný)
+                        if href.startswith('http') and 'panoramafirm.pl' not in href and 'google.com' not in href:
+                            website = href
+                            break
                     
-                    if parent:
-                        # Hledat web - JAKÝKOLIV link s http
-                        all_links = parent.find_all('a', href=True)
-                        for link in all_links:
-                            href = link.get('href', '')
-                            # Pokud obsahuje http a není to panoramafirm
-                            if href.startswith('http') and 'panoramafirm.pl' not in href:
-                                website = href
-                                break
-                        
-                        # Hledat VŠECHNY emaily v textu
-                        text = parent.get_text()
-                        email_matches = EMAIL_PATTERN.findall(text)
-                        if email_matches:
-                            # Filtrovat jen validní emaily
-                            valid_emails = []
-                            for em in email_matches:
-                                if '@' in em and '.' in em.split('@')[1]:
-                                    valid_emails.append(em)
-                            if valid_emails:
-                                email = ', '.join(valid_emails)
+                    # Hledat emaily v celém textu karty
+                    card_text = card.get_text()
+                    email_matches = EMAIL_PATTERN.findall(card_text)
+                    if email_matches:
+                        # Filtrovat validní emaily
+                        valid_emails = []
+                        for em in email_matches:
+                            if '@' in em and '.' in em.split('@')[1] and 'example' not in em.lower():
+                                valid_emails.append(em)
+                        if valid_emails:
+                            email = ', '.join(list(set(valid_emails)))  # Odstranit duplicity
                     
                     all_data.append({
                         'name': name,
-                        'website': website or '',
-                        'email': email or ''
+                        'website': website,
+                        'email': email
                     })
                     seen_names.add(name)
             
@@ -445,7 +452,7 @@ def find_email_on_website(url):
     except:
         return None
 
-def scrape_category_thread(category_slug, max_companies):
+def scrape_category_thread(category_slug, max_companies, search_method='panorama'):
     """Hlavní scraping funkce (běží v threadu)"""
     global scraping_status
     
@@ -493,18 +500,41 @@ def scrape_category_thread(category_slug, max_companies):
         scraping_status['total'] = len(company_names)
         scraping_status['message'] = f'✅ Nalezeno {len(company_names)} firem, zpracovávám...'
         
-        # KROK 3: Zpracovat firmy podle zdroje
+        # KROK 3: Zpracovat firmy podle zdroje a zvoleného režimu
         if source == 'panorama':
-            # Panorama - už máme všechno ze stránky, NEHLEDAT NIC navíc!
             for idx, company_data in enumerate(company_names, 1):
                 scraping_status['current_company'] = company_data['name']
                 scraping_status['progress'] = idx
                 
-                # Použít přímo data z Panorama, žádné Google vyhledávání!
+                website = company_data['website'] or ''
+                email = company_data['email'] or ''
+                
+                # Podle zvoleného režimu vyhledávání
+                if search_method == 'panorama':
+                    # Pouze data z Panorama - NEJRYCHLEJŠÍ
+                    pass  # website a email už máme
+                    
+                elif search_method == 'google':
+                    # Pouze Google - přepsat Panorama data
+                    website = google_search_website(driver, company_data['name']) or ''
+                    if website:
+                        email = find_email_on_website(website) or ''
+                    if not email:
+                        email = google_search_email(driver, company_data['name']) or ''
+                    
+                elif search_method == 'both':
+                    # Panorama + Google doplnění - jen co chybí
+                    if not website:
+                        website = google_search_website(driver, company_data['name']) or ''
+                    if not email and website:
+                        email = find_email_on_website(website) or ''
+                    if not email:
+                        email = google_search_email(driver, company_data['name']) or ''
+                
                 scraping_status['results'].append({
                     'name': company_data['name'],
-                    'website': company_data['website'] or '',
-                    'email': company_data['email'] or ''
+                    'website': website,
+                    'email': email
                 })
         else:
             # ALEO - hledat web a email pro každou firmu
@@ -601,12 +631,13 @@ def start_scraping():
     data = request.json
     category = data.get('category')
     max_companies = int(data.get('max_companies', 10))
+    search_method = data.get('search_method', 'panorama')  # panorama, google, both
     
     if category not in CATEGORIES:
         return jsonify({'error': 'Neplatná kategorie'}), 400
     
     # Spustit v threadu
-    thread = threading.Thread(target=scrape_category_thread, args=(category, max_companies))
+    thread = threading.Thread(target=scrape_category_thread, args=(category, max_companies, search_method))
     thread.start()
     
     return jsonify({'status': 'started'})
