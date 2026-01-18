@@ -259,18 +259,18 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
     """
     try:
         driver.get(category_url)
-        time.sleep(5)
+        time.sleep(2)  # Zkráceno z 5s na 2s
         
         all_data = []
         seen_names = set()
         
         # Scroll a načítej více firem
-        scroll_attempts = max_companies // 25 + 2  # Kolikrát scrollovat
+        scroll_attempts = min(max_companies // 30 + 1, 5)  # Max 5 scrollů
         
         for i in range(scroll_attempts):
             # Scroll dolů
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(3)
+            time.sleep(1)  # Zkráceno z 3s na 1s
             
             # Získat aktuální firmy podle zdroje
             if source == 'aleo':
@@ -349,7 +349,7 @@ def google_search_website(driver, company_name):
         query = f"{short_name} Poland"
         url = f"https://www.google.com/search?q={requests.utils.quote(query)}&hl=pl"
         driver.get(url)
-        time.sleep(2)
+        time.sleep(1)  # Zkráceno z 2s na 1s
         
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         links = soup.find_all('a')
@@ -458,7 +458,7 @@ def scrape_category_thread(category_slug, max_companies):
         scraping_status['message'] = f'🔓 Otevírám {source.upper()}...'
         
         driver.get(category_url)
-        time.sleep(5)  # Počkat na načtení stránky
+        time.sleep(2)  # Zkráceno z 5s na 2s
         
         # KROK 2: Načíst firmy
         scraping_status['message'] = f'📂 Načítám firmy z kategorie...'
@@ -499,7 +499,7 @@ def scrape_category_thread(category_slug, max_companies):
                     'email': email or ''
                 })
                 
-                time.sleep(0.5)
+                time.sleep(0.2)  # Zkráceno z 0.5s na 0.2s
         else:
             # ALEO - hledat web a email pro každou firmu
             for idx, company_name in enumerate(company_names, 1):
@@ -521,7 +521,7 @@ def scrape_category_thread(category_slug, max_companies):
                     'email': email or ''
                 })
                 
-                time.sleep(1)
+                time.sleep(0.3)  # Zkráceno z 1s na 0.3s
         
         # Uložit CSV
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
