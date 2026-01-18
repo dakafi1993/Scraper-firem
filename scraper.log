@@ -1,0 +1,29 @@
+2026-01-16 13:03:23,328 - INFO - ============================================================
+2026-01-16 13:03:23,328 - INFO - ALEO.COM SCRAPER - START
+2026-01-16 13:03:23,329 - INFO - ============================================================
+2026-01-16 13:03:23,329 - INFO - Zahajuji scraping od: https://www.aleo.com/firmy
+2026-01-16 13:03:23,329 - INFO - Zpracovávám stránku 1: https://www.aleo.com/firmy
+2026-01-16 13:03:25,784 - WARNING - Přístup zakázán (403) pro https://www.aleo.com/firmy
+2026-01-16 13:03:25,786 - ERROR - Nepodařilo se načíst stránku: https://www.aleo.com/firmy
+2026-01-16 13:03:31,745 - ERROR - Nebyly nalezeny žádné společnosti!
+2026-01-16 13:06:36,949 - INFO - Inicializuji Selenium WebDriver...
+2026-01-16 13:06:36,953 - INFO - ====== WebDriver manager ======
+2026-01-16 13:06:40,351 - INFO - Get LATEST chromedriver version for google-chrome
+2026-01-16 13:06:40,809 - INFO - Get LATEST chromedriver version for google-chrome
+2026-01-16 13:06:41,207 - INFO - There is no [win64] chromedriver "143.0.7499.192" for browser google-chrome "143.0.7499" in cache
+2026-01-16 13:06:41,208 - INFO - Get LATEST chromedriver version for google-chrome
+2026-01-16 13:06:42,184 - INFO - WebDriver version 143.0.7499.192 selected
+2026-01-16 13:06:42,195 - INFO - Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/143.0.7499.192/win32/chromedriver-win32.zip
+2026-01-16 13:06:42,195 - INFO - About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/143.0.7499.192/win32/chromedriver-win32.zip
+2026-01-16 13:06:42,663 - INFO - Driver downloading response is 200
+2026-01-16 13:06:43,661 - INFO - Get LATEST chromedriver version for google-chrome
+2026-01-16 13:06:44,272 - INFO - Driver has been saved in cache [C:\Users\dakaf\.wdm\drivers\chromedriver\win64\143.0.7499.192]
+2026-01-16 13:06:46,774 - INFO - ✓ Selenium WebDriver inicializován
+2026-01-16 13:06:46,781 - INFO - ============================================================
+2026-01-16 13:06:46,783 - INFO - ALEO.COM SCRAPER - START
+2026-01-16 13:06:46,786 - INFO - ============================================================
+2026-01-16 13:06:46,794 - INFO - Zahajuji scraping od: https://www.aleo.com/firmy
+2026-01-16 13:06:46,814 - INFO - Zpracovávám stránku 1: https://www.aleo.com/firmy
+2026-01-16 13:06:53,193 - INFO - Žádná další stránka nebyla nalezena
+2026-01-16 13:06:53,193 - ERROR - Nebyly nalezeny žádné společnosti!
+2026-01-16 13:06:55,781 - INFO - ✓ Selenium driver uzavřen

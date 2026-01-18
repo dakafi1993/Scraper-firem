@@ -1,0 +1,128 @@
+2026-01-16 13:14:40,771 - INFO - 🚀 Inicializuji prohlížeč...
+2026-01-16 13:14:40,771 - INFO - ====== WebDriver manager ======
+2026-01-16 13:14:44,541 - INFO - Get LATEST chromedriver version for google-chrome
+2026-01-16 13:14:44,950 - INFO - Get LATEST chromedriver version for google-chrome
+2026-01-16 13:14:45,367 - INFO - Driver [C:\Users\dakaf\.wdm\drivers\chromedriver\win64\143.0.7499.192\chromedriver-win32/chromedriver.exe] found in cache
+2026-01-16 13:14:47,296 - INFO - ✓ Prohlížeč připraven
+
+2026-01-16 13:14:47,296 - INFO - ======================================================================
+2026-01-16 13:14:47,298 - INFO - ALEO.COM INTERNATIONAL SCRAPER - START
+2026-01-16 13:14:47,298 - INFO - ======================================================================
+2026-01-16 13:14:47,299 - INFO - 📋 Načítám seznam společností z: https://aleo.com/int/
+2026-01-16 13:14:49,268 - INFO - ⏳ Čekám na Cloudflare challenge...
+2026-01-16 13:14:49,268 - INFO -    Pokud se zobrazí CAPTCHA, vyřešte ji ručně v prohlížeči
+2026-01-16 13:14:51,368 - INFO - ✓ Cloudflare vyřešen
+2026-01-16 13:14:54,370 - INFO - 📜 Scrolluji stránku pro načtení všech dat...
+2026-01-16 13:14:58,771 - INFO - 🔍 Analyzuji 51 odkazů...
+2026-01-16 13:14:58,772 - INFO - ✓ Nalezeno 2 potenciálních společností
+2026-01-16 13:14:58,772 - INFO - 📊 Omezeno na 10 společností
+2026-01-16 13:14:58,772 - INFO - 
+📋 Příklady nalezených společností:
+2026-01-16 13:14:58,774 - INFO -    1. Cookie Policy
+2026-01-16 13:14:58,774 - INFO -    2. Privacy Policy
+2026-01-16 13:14:58,775 - INFO - 
+======================================================================
+2026-01-16 13:14:58,775 - INFO - ZPRACOVÁVÁM 2 SPOLEČNOSTÍ
+2026-01-16 13:14:58,775 - INFO - ======================================================================
+2026-01-16 13:14:58,778 - INFO - 
+[1/2]
+2026-01-16 13:14:58,778 - INFO - 
+[Firma] Cookie Policy
+2026-01-16 13:14:58,779 - INFO -    📄 Otevírám profil: https://aleo.com/int/about-the-platform/cookie-policy...
+2026-01-16 13:15:02,817 - INFO -    ⚠️  Email na profilu nenalezen
+2026-01-16 13:15:02,817 - INFO -    🔎 Vyhledávám email pro: Cookie Policy...
+2026-01-16 13:15:07,559 - INFO -    ✓ Email nalezen přes Google: privacy@b2-impact.fi
+2026-01-16 13:15:09,561 - INFO - 
+[2/2]
+2026-01-16 13:15:09,561 - INFO - 
+[Firma] Privacy Policy
+2026-01-16 13:15:09,561 - INFO -    📄 Otevírám profil: https://aleo.com/int/about-the-platform/privacy-policy...
+2026-01-16 13:15:13,743 - INFO -    ✓ Email z profilu: pomoc@aleo.com
+2026-01-16 13:15:15,750 - INFO - 
+💾 CSV uloženo: output\aleo_int_20260116_131515.csv
+2026-01-16 13:15:15,954 - INFO - 💾 Excel uloženo: output\aleo_int_20260116_131515.xlsx
+2026-01-16 13:15:15,963 - ERROR - 
+❌ Kritická chyba: Object of type int64 is not JSON serializable
+Traceback (most recent call last):
+  File "D:\skript\aleo_scraper_int.py", line 405, in main
+    scraper.run(
+  File "D:\skript\aleo_scraper_int.py", line 327, in run
+    self.save_results()
+  File "D:\skript\aleo_scraper_int.py", line 372, in save_results
+    json.dump(stats, f, ensure_ascii=False, indent=2)
+  File "C:\Users\dakaf\AppData\Local\Programs\Python\Python312\Lib\json\__init__.py", line 179, in dump
+    for chunk in iterable:
+                 ^^^^^^^^
+  File "C:\Users\dakaf\AppData\Local\Programs\Python\Python312\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Users\dakaf\AppData\Local\Programs\Python\Python312\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Users\dakaf\AppData\Local\Programs\Python\Python312\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "C:\Users\dakaf\AppData\Local\Programs\Python\Python312\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type int64 is not JSON serializable
+2026-01-16 13:15:18,434 - INFO - 
+✓ Prohlížeč uzavřen
+2026-01-16 13:18:57,155 - INFO - 🚀 Inicializuji prohlížeč...
+2026-01-16 13:18:57,155 - INFO - ====== WebDriver manager ======
+2026-01-16 13:19:00,568 - INFO - Get LATEST chromedriver version for google-chrome
+2026-01-16 13:19:00,998 - INFO - Get LATEST chromedriver version for google-chrome
+2026-01-16 13:19:01,392 - INFO - Driver [C:\Users\dakaf\.wdm\drivers\chromedriver\win64\143.0.7499.192\chromedriver-win32/chromedriver.exe] found in cache
+2026-01-16 13:19:03,139 - INFO - ✓ Prohlížeč připraven
+
+2026-01-16 13:19:03,148 - INFO - ======================================================================
+2026-01-16 13:19:03,149 - INFO - ALEO.COM INTERNATIONAL SCRAPER - START
+2026-01-16 13:19:03,149 - INFO - ======================================================================
+2026-01-16 13:19:03,149 - INFO - 📋 Načítám seznam společností z: https://aleo.com/int/
+2026-01-16 13:19:05,435 - INFO - ⏳ Čekám na Cloudflare challenge...
+2026-01-16 13:19:05,435 - INFO -    ⚠️  NYNÍ: Pokud vidíte CAPTCHA, vyřešte ji RUČNĚ v prohlížeči!
+2026-01-16 13:19:05,435 - INFO -    Po vyřešení stránka automaticky pokračuje...
+2026-01-16 13:19:10,018 - INFO - ✓ Cloudflare vyřešen!
+2026-01-16 13:19:13,019 - INFO - 📜 Scrolluji stránku pro načtení všech dat...
+2026-01-16 13:19:17,178 - INFO - 💾 HTML stránky uloženo do aleo_int_page.html pro analýzu
+2026-01-16 13:19:17,179 - INFO - 🔍 Analyzuji 51 odkazů...
+2026-01-16 13:19:17,182 - INFO - 📦 Nalezeno 218 potenciálních kontejnerů
+2026-01-16 13:19:17,186 - WARNING - ⚠️  Metoda 1 nenašla firmy, zkouším obecnější přístup...
+2026-01-16 13:19:17,187 - WARNING - ⚠️  Standardní metody nenašly firmy
+2026-01-16 13:19:17,187 - INFO - 📊 Zobrazuji všechny nalezené odkazy pro manuální kontrolu:
+2026-01-16 13:19:17,187 - INFO -    • Cookie Policy → https://aleo.com/int/about-the-platform/cookie-policy
+2026-01-16 13:19:17,188 - INFO -    • Privacy Policy → https://aleo.com/int/about-the-platform/privacy-policy
+2026-01-16 13:19:17,188 - INFO -    • Business directory → companies
+2026-01-16 13:19:17,188 - INFO -    • Supplier Financing → functions/supplier-financing
+2026-01-16 13:19:17,188 - INFO -    • NIP Searcher → functions/business-directory/nip-searcher
+2026-01-16 13:19:17,188 - INFO -    • KRS Searcher → functions/business-directory/krs-searcher
+2026-01-16 13:19:17,189 - INFO -    • REGON Searcher → functions/business-directory/regon-searcher
+2026-01-16 13:19:17,189 - INFO -    • VAT Registry → functions/business-directory/vat-registry
+2026-01-16 13:19:17,189 - INFO -    • FAQ → https://pomoc.aleo.com/
+2026-01-16 13:19:17,189 - INFO -    • ONE PLUS SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/one-plus-sp-z-oo-wroclaw
+2026-01-16 13:19:17,189 - INFO -    • LIBERTY CZĘSTOCHOWA SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ  → company/corween-investments-sp-z-oo-warszawa
+2026-01-16 13:19:17,189 - INFO -    • POLSKI MATERAC GROUP SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/polski-materac-group-spolka-z-ograniczona-odpowiedzi
+2026-01-16 13:19:17,189 - INFO -    • LARGO GOSTYŃSKI SPÓŁKA JAWNA → company/largo-gostynski-spolka-jawna
+2026-01-16 13:19:17,190 - INFO -    • GREGHOUSE SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/greghouse-spolka-z-ograniczona-odpowiedzialnoscia
+2026-01-16 13:19:17,190 - INFO -    • ATERVIN GROUP SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/atervin-group-spolka-z-ograniczona-odpowiedzialnosci
+2026-01-16 13:19:17,190 - INFO -    • Q4ROAD SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/q4road-spolka-z-ograniczona-odpowiedzialnoscia
+2026-01-16 13:19:17,190 - INFO -    • EU WORKERS POLAND SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/eu-workers-poland-spolka-z-ograniczona-odpowiedzialn
+2026-01-16 13:19:17,190 - INFO -    • CONCIERGE SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/concierge-spolka-z-ograniczona-odpowiedzialnoscia
+2026-01-16 13:19:17,190 - INFO -    • ONE PLUS SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/one-plus-sp-z-oo-wroclaw
+2026-01-16 13:19:17,190 - INFO -    • LIBERTY CZĘSTOCHOWA SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ  → company/corween-investments-sp-z-oo-warszawa
+2026-01-16 13:19:17,191 - INFO -    • POLSKI MATERAC GROUP SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/polski-materac-group-spolka-z-ograniczona-odpowiedzi
+2026-01-16 13:19:17,191 - INFO -    • Check out Supplier Financing → /int/functions/supplier-financing
+2026-01-16 13:19:17,191 - INFO -    • Show business directory → /int/companies
+2026-01-16 13:19:17,191 - INFO -    • RAGGIUNGIMENTO SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/raggiungimento-spolka-z-ograniczona-odpowiedzialnosc
+2026-01-16 13:19:17,191 - INFO -    • QERAVIA SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/qeravia-spolka-z-ograniczona-odpowiedzialnoscia
+2026-01-16 13:19:17,191 - INFO -    • STREFA INWESTOR SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/strefa-inwestor-spolka-z-ograniczona-odpowiedzialnos
+2026-01-16 13:19:17,192 - INFO -    • NUBILO SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/nubilo-spolka-z-ograniczona-odpowiedzialnoscia
+2026-01-16 13:19:17,192 - INFO -    • JUNA TRANSPORT SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/juna-transport-spolka-z-ograniczona-odpowiedzialnosc
+2026-01-16 13:19:17,192 - INFO -    • CZYSTE CIEPŁO SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ → company/czyste-cieplo-spolka-z-ograniczona-odpowiedzialnosci
+2026-01-16 13:19:17,192 - INFO - ✓ Nalezeno 0 potenciálních společností
+2026-01-16 13:19:17,193 - INFO - 📊 Omezeno na 5 společností
+2026-01-16 13:19:17,193 - ERROR - ❌ Žádné společnosti nebyly nalezeny!
+2026-01-16 13:19:17,193 - INFO - 
+💡 TIP: Zkuste:
+2026-01-16 13:19:17,193 - INFO -    1. Zkontrolovat URL
+2026-01-16 13:19:17,193 - INFO -    2. Ručně otevřít stránku a podívat se na HTML strukturu
+2026-01-16 13:19:17,193 - INFO -    3. Použít semi-manuální režim
+2026-01-16 13:19:19,852 - INFO - 
+✓ Prohlížeč uzavřen

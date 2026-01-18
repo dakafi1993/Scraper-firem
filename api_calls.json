@@ -1,0 +1,89 @@
+[
+  {
+    "url": "https://aleo.com/pl/blog/ghost/api/content/settings?key=ce292607d22420ba111ba0f9d2",
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json, text/plain, */*",
+      "Referer": "https://aleo.com/pl/firmy/artykuly-dla-biur-i-wyposazenie-biurowe",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+      "sec-ch-ua-arch": "\"x86\"",
+      "sec-ch-ua-bitness": "\"64\"",
+      "sec-ch-ua-full-version": "\"143.0.7499.171\"",
+      "sec-ch-ua-full-version-list": "\"Google Chrome\";v=\"143.0.7499.171\", \"Chromium\";v=\"143.0.7499.171\", \"Not A(Brand\";v=\"24.0.0.0\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-model": "\"\"",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "sec-ch-ua-platform-version": "\"19.0.0\""
+    }
+  },
+  {
+    "url": "https://aleo.com/pl/porady/ghost/api/content/settings?key=351a53ab4d19473d1a0d2c9ced",
+    "method": "GET",
+    "headers": {
+      "Accept": "application/json, text/plain, */*",
+      "Referer": "https://aleo.com/pl/firmy/artykuly-dla-biur-i-wyposazenie-biurowe",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+      "sec-ch-ua-arch": "\"x86\"",
+      "sec-ch-ua-bitness": "\"64\"",
+      "sec-ch-ua-full-version": "\"143.0.7499.171\"",
+      "sec-ch-ua-full-version-list": "\"Google Chrome\";v=\"143.0.7499.171\", \"Chromium\";v=\"143.0.7499.171\", \"Not A(Brand\";v=\"24.0.0.0\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-model": "\"\"",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "sec-ch-ua-platform-version": "\"19.0.0\""
+    }
+  },
+  {
+    "url": "https://aleo.com/pl/porady/ghost/api/content/settings/?key=351a53ab4d19473d1a0d2c9ced",
+    "method": "GET",
+    "headers": {
+      "Referer": "https://aleo.com/pl/firmy/artykuly-dla-biur-i-wyposazenie-biurowe",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://aleo.com/pl/blog/ghost/api/content/settings/?key=ce292607d22420ba111ba0f9d2",
+    "method": "GET",
+    "headers": {
+      "Referer": "https://aleo.com/pl/firmy/artykuly-dla-biur-i-wyposazenie-biurowe",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
+    }
+  },
+  {
+    "url": "https://log.cookieyes.com/api/v1/log",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "multipart/form-data; boundary=----WebKitFormBoundary3soxGc97JRdoGtVW",
+      "Referer": "https://aleo.com/",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    }
+  },
+  {
+    "url": "https://directory.cookieyes.com/api/v1/ip",
+    "method": "GET",
+    "headers": {
+      "Referer": "https://aleo.com/",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    }
+  },
+  {
+    "url": "https://log.cookieyes.com/api/v1/consent",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "multipart/form-data; boundary=----WebKitFormBoundaryxorpLvFGypL4MvwM",
+      "Referer": "https://aleo.com/",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    }
+  }
+]

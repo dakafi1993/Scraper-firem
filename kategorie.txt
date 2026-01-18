@@ -1,0 +1,29 @@
+# Aleo.com Kategorie - SPRÁVNÉ URL s /pl/firmy/
+# Každá kategorie má seznam firem s možností stránkování
+
+https://aleo.com/pl/firmy/artykuly-dla-biur-i-wyposazenie-biurowe
+https://aleo.com/pl/firmy/bhp-ppoz-i-srodki-czystosci
+https://aleo.com/pl/firmy/budownictwo-uslugi-i-materialy-budowlane
+https://aleo.com/pl/firmy/chemia
+https://aleo.com/pl/firmy/dom-i-ogrod
+https://aleo.com/pl/firmy/edukacja-sport-i-rozrywka
+https://aleo.com/pl/firmy/energia-paliwa-media
+https://aleo.com/pl/firmy/it-i-telekomunikacja
+https://aleo.com/pl/firmy/logistyka-spedycja-transport
+https://aleo.com/pl/firmy/marketing-reklama-i-pr
+https://aleo.com/pl/firmy/maszyny-i-urzadzenia-obrabiajace-produkcyjne
+https://aleo.com/pl/firmy/meble
+https://aleo.com/pl/firmy/medycyna-farmacja-i-kosmetyki
+https://aleo.com/pl/firmy/nieruchomosci-i-uslugi-powiazane
+https://aleo.com/pl/firmy/odpady-i-surowce-wtorne
+https://aleo.com/pl/firmy/opakowania-etykiety-folie-tasmy
+https://aleo.com/pl/firmy/pojazdy-i-srodki-transportu
+https://aleo.com/pl/firmy/pozostale
+https://aleo.com/pl/firmy/przemysl-spozywczy
+https://aleo.com/pl/firmy/rolnictwo-hodowla-i-uprawa
+https://aleo.com/pl/firmy/rtv-i-agd
+https://aleo.com/pl/firmy/surowce-i-polprodukty
+https://aleo.com/pl/firmy/ubrania-obuwie-galanteria-bizuteria-dodatki
+https://aleo.com/pl/firmy/uslugi-dla-firm
+https://aleo.com/pl/firmy/administracja-publiczna
+https://aleo.com/pl/firmy/inne

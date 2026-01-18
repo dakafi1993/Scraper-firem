@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Výstupy
+*.csv
+*.xlsx
+output/
+logs/
+
+# Konfigurace s citlivými daty
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

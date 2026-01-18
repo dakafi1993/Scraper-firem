@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraper firem - ALEO & Panorama Firm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 12px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.2em;
+        }
+        
+        /* Kategorie grid */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .category-section {
+            margin-bottom: 40px;
+        }
+        
+        .category-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-icon {
+            font-size: 1.5em;
+        }
+        
+        .alphabet-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .letter-btn {
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #333;
+            transition: all 0.3s;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .letter-btn:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .letter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .letter-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .subcategory-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .subcategory-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .subcategory-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+        
+        .subcategory-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        
+
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .status-box.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .status-text {
+            text-align: center;
+            color: #333;
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+        
+        .current-company {
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin: 10px 0;
+            min-height: 24px;
+        }
+        
+        .btn-download {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            margin-top: 15px;
+        }
+        
+        .btn-download:hover {
+            box-shadow: 0 10px 25px rgba(56, 239, 125, 0.4);
+        }
+        
+        .results-summary {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 2px solid #667eea;
+        }
+        
+        .results-summary h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .stat:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #666;
+        }
+        
+        .stat-value {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Scraper firem</h1>
+        <p class="subtitle">Vyhledávač firem a kontaktů z Panorama Firm</p>
+        
+        <!-- PANORAMA Kategorie -->
+        <div class="category-section">
+            <div class="category-header">
+                <span class="category-icon">🏭</span>
+                <span>Panorama Firm - Przemysł i energetyka</span>
+            </div>
+            
+            <!-- Písmenkový filtr -->
+            <div class="alphabet-filter" id="alphabetFilter">
+                <button class="letter-btn active" data-letter="ALL">Vše</button>
+            </div>
+            
+            <div class="categories-grid">
+                {% for slug, name in categories.items() if slug.startswith('panorama_') %}
+                <div class="subcategory-card" data-slug="{{ slug }}">
+                    <div class="subcategory-name">{{ name.replace('PANORAMA: ', '') }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="max_companies">Počet firem (max 10000):</label>
+            <input type="number" id="max_companies" name="max_companies" value="10" min="1" max="10000">
+        </div>
+        
+        <button class="btn" id="startBtn" onclick="startScraping()" disabled>
+            🚀 Vyberte kategorii a spusťte vyhledávání
+        </button>
+        
+        <div class="status-box" id="statusBox">
+            <div class="status-text" id="statusMessage">Připraveno...</div>
+            <div class="current-company" id="currentCompany"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
+            </div>
+            
+            <div class="results-summary" id="resultsSummary" style="display: none;">
+                <h3>📊 Výsledky</h3>
+                <div class="stat">
+                    <span class="stat-label">Celkem firem:</span>
+                    <span class="stat-value" id="totalCompanies">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">S webem:</span>
+                    <span class="stat-value" id="withWebsite">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">S emailem:</span>
+                    <span class="stat-value" id="withEmail">0</span>
+                </div>
+            </div>
+            
+            <button class="btn btn-download" id="downloadBtn" onclick="downloadCSV()" style="display: none;">
+                💾 Stáhnout CSV
+            </button>
+            
+            <button class="btn btn-download" id="downloadExcelBtn" onclick="downloadExcel()" style="display: none;">
+                📊 Stáhnout Excel (lepší přehlednost)
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        let statusInterval;
+        let selectedCategory = null;
+        
+        // Inicializace písmenkového filtru
+        function initAlphabetFilter() {
+            const categories = document.querySelectorAll('.subcategory-card');
+            const availableLetters = new Set();
+            
+            // Zjistit, která písmena se vyskytují
+            categories.forEach(card => {
+                const name = card.querySelector('.subcategory-name').textContent.trim();
+                const firstLetter = name.charAt(0).toUpperCase();
+                availableLetters.add(firstLetter);
+            });
+            
+            // Vytvořit tlačítka pro písmena
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ'.split('');
+            const filterContainer = document.getElementById('alphabetFilter');
+            
+            alphabet.forEach(letter => {
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.textContent = letter;
+                btn.dataset.letter = letter;
+                
+                if (!availableLetters.has(letter)) {
+                    btn.classList.add('disabled');
+                    btn.disabled = true;
+                }
+                
+                filterContainer.appendChild(btn);
+            });
+        }
+        
+        // Při načtení stránky - přidat event listenery
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializovat filtr
+            initAlphabetFilter();
+            
+            const cards = document.querySelectorAll('.subcategory-card');
+            
+            // Click na písmeno filtru
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('letter-btn') && !e.target.classList.contains('disabled')) {
+                    const letter = e.target.dataset.letter;
+                    
+                    // Aktualizovat aktivní tlačítko
+                    document.querySelectorAll('.letter-btn').forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    // Filtrovat kategorie
+                    cards.forEach(card => {
+                        const name = card.querySelector('.subcategory-name').textContent.trim();
+                        const firstLetter = name.charAt(0).toUpperCase();
+                        
+                        if (letter === 'ALL' || firstLetter === letter) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                }
+            });
+            
+            // Click na kategorie
+            cards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Odebrat selected z ostatních
+                    cards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Přidat selected k této kartě
+                    this.classList.add('selected');
+                    selectedCategory = this.dataset.slug;
+                    
+                    // Aktivovat tlačítko
+                    const btn = document.getElementById('startBtn');
+                    btn.disabled = false;
+                    btn.textContent = '🚀 Spustit vyhledávání';
+                });
+            });
+        });
+        
+        async function startScraping() {
+            if (!selectedCategory) {
+                alert('Nejdřív vyberte kategorii!');
+                return;
+            }
+            
+            const maxCompanies = document.getElementById('max_companies').value;
+            const startBtn = document.getElementById('startBtn');
+            const statusBox = document.getElementById('statusBox');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+            const resultsSummary = document.getElementById('resultsSummary');
+            
+            startBtn.disabled = true;
+            statusBox.classList.add('active');
+            downloadBtn.style.display = 'none';
+            downloadExcelBtn.style.display = 'none';
+            resultsSummary.style.display = 'none';
+            
+            try {
+                const response = await fetch('/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        category: selectedCategory,
+                        max_companies: maxCompanies
+                    })
+                });
+                
+                if (response.ok) {
+                    // Začít sledovat status
+                    statusInterval = setInterval(updateStatus, 1000);
+                } else {
+                    alert('Chyba při spuštění');
+                    startBtn.disabled = false;
+                }
+            } catch (error) {
+                alert('Chyba: ' + error);
+                startBtn.disabled = false;
+            }
+        }
+        
+        async function updateStatus() {
+            try {
+                const response = await fetch('/status');
+                const status = await response.json();
+                
+                const statusMessage = document.getElementById('statusMessage');
+                const currentCompany = document.getElementById('currentCompany');
+                const progressFill = document.getElementById('progressFill');
+                const startBtn = document.getElementById('startBtn');
+                const downloadBtn = document.getElementById('downloadBtn');
+                const resultsSummary = document.getElementById('resultsSummary');
+                
+                statusMessage.textContent = status.message;
+                currentCompany.textContent = status.current_company;
+                
+                if (status.total > 0) {
+                    const percent = Math.round((status.progress / status.total) * 100);
+                    progressFill.style.width = percent + '%';
+                    progressFill.textContent = `${status.progress}/${status.total} (${percent}%)`;
+                }
+                
+                if (!status.running && status.output_file) {
+                    clearInterval(statusInterval);
+                    startBtn.disabled = false;
+                    downloadBtn.style.display = 'block';
+                    document.getElementById('downloadExcelBtn').style.display = 'block';
+                    resultsSummary.style.display = 'block';
+                    
+                    // Aktualizovat statistiky
+                    const totalCompanies = status.results.length;
+                    const withWebsite = status.results.filter(r => r.website).length;
+                    const withEmail = status.results.filter(r => r.email).length;
+                    
+                    document.getElementById('totalCompanies').textContent = totalCompanies;
+                    document.getElementById('withWebsite').textContent = withWebsite;
+                    document.getElementById('withEmail').textContent = withEmail;
+                }
+                
+                if (!status.running && !status.output_file && status.message.includes('❌')) {
+                    clearInterval(statusInterval);
+                    startBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('Chyba při aktualizaci statusu:', error);
+            }
+        }
+        
+        function downloadCSV() {
+            window.location.href = '/download';
+        }
+        
+        function downloadExcel() {
+            window.location.href = '/download/excel';
+        }
+    </script>
+</body>
+</html>

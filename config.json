@@ -1,0 +1,26 @@
+{
+  "use_selenium": true,
+  "headless": false,
+  "request_delay": 3.0,
+  "timeout": 15,
+  "rate_limit_wait": 60,
+  "max_pages": 5,
+  "search_company_website": true,
+  "manual_intervention": true,
+  "output_dir": "output",
+  "user_agent_rotation": true,
+  "respect_robots_txt": true,
+  "comments": {
+    "use_selenium": "Použít Selenium místo requests (doporučeno)",
+    "headless": "Spustit prohlížeč na pozadí (false = viditelný prohlížeč)",
+    "request_delay": "Prodleva mezi požadavky v sekundách (min. 2-3s)",
+    "timeout": "Timeout pro HTTP požadavky v sekundách",
+    "rate_limit_wait": "Jak dlouho čekat při rate limit (429) v sekundách",
+    "max_pages": "Maximální počet stránek katalogu k procházení (null = bez omezení)",
+    "search_company_website": "Pokusit se najít email na webu společnosti",
+    "manual_intervention": "Vyžádat manuální zásah při blokaci",
+    "output_dir": "Složka pro výstupní soubory",
+    "user_agent_rotation": "Rotovat User-Agent mezi požadavky",
+    "respect_robots_txt": "Respektovat robots.txt (doporučeno)"
+  }
+}
