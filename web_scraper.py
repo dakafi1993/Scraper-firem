@@ -322,6 +322,29 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 time.sleep(3)
                 
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
+                
+                # DEBUG - První scroll vypsat HTML strukturu
+                if i == 0:
+                    logger.info("=== DEBUG: HTML STRUKTURA ===")
+                    all_h2 = soup.find_all('h2')
+                    logger.info(f"Celkem H2 tagů na stránce: {len(all_h2)}")
+                    for idx, h2 in enumerate(all_h2[:5], 1):  # První 5 H2
+                        logger.info(f"H2 #{idx}: Text='{h2.get_text(strip=True)[:50]}', Class={h2.get('class')}")
+                    
+                    # Zkusit najít karty firem jinak
+                    article_tags = soup.find_all('article')
+                    logger.info(f"Celkem article tagů: {len(article_tags)}")
+                    
+                    divs_with_firma = soup.find_all('div', class_=lambda c: c and any('firma' in str(x).lower() for x in c) if c else False)
+                    logger.info(f"Divů s 'firma' v třídě: {len(divs_with_firma)}")
+                    
+                    # Hledat linky na /firma/
+                    firma_links = soup.find_all('a', href=lambda h: h and '/firma/' in h)
+                    logger.info(f"Linků na /firma/: {len(firma_links)}")
+                    if firma_links:
+                        logger.info(f"První link: {firma_links[0].get('href')}")
+                    logger.info("=== KONEC DEBUG ===")
+                
                 h2_elements = soup.find_all('h2', class_=lambda c: c and 'text-h1' in c if c else False)
                 
                 for h2 in h2_elements:
