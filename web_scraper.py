@@ -362,16 +362,28 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie') or len(name) < 3:
                         continue
                     
-                    # Najít odkaz na detail firmy
+                    # Najít odkaz na detail firmy - NOVÁ LOGIKA
+                    # Panorama používá: /miasto,okres,ulica,cislo/nazev-firmy
                     detail_link = None
                     parent = h2.parent
-                    for _ in range(10):
+                    
+                    for level in range(10):
                         if parent:
-                            a_tag = parent.find('a', href=lambda h: h and '/firma/' in h)
-                            if a_tag:
-                                detail_link = a_tag.get('href')
-                                if not detail_link.startswith('http'):
-                                    detail_link = f"https://panoramafirm.pl{detail_link}"
+                            # Hledat PRVNÍ link, který není kategorie
+                            links = parent.find_all('a', href=True)
+                            for link in links:
+                                href = link.get('href')
+                                # Skip kategorie a jiné interní linky
+                                if (href and 
+                                    href.startswith('/') and 
+                                    ',' in href and  # Obsahuje čárku (město,okres,...)
+                                    not href.startswith('/kategoria') and
+                                    not href.startswith('/branze')):
+                                    detail_link = f"https://panoramafirm.pl{href}"
+                                    logger.info(f"Našel link pro '{name[:30]}': {detail_link[:80]}")
+                                    break
+                            
+                            if detail_link:
                                 break
                             parent = parent.parent
                         else:
@@ -380,6 +392,8 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     if detail_link and name not in seen_names:
                         company_details.append({'name': name, 'url': detail_link})
                         seen_names.add(name)
+                    elif not detail_link:
+                        logger.warning(f"Nenašel jsem link pro firmu: {name[:50]}")
                 
                 scraping_status['message'] = f'📂 Načteno {len(company_details)} firem ze seznamu... (scroll {i+1}/{scroll_attempts})'
                 logger.info(f"Po scrollu {i+1}: Celkem {len(company_details)} firem")
