@@ -413,7 +413,8 @@ def find_email_on_website(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         
-        pages = [url, f"{url}/kontakt", f"{url}/contact", f"{url}/kontakty", f"{url}/o-nas"]
+        # Hledat pouze na hlavní stránce (RYCHLE!)
+        pages = [url]
         
         for page_url in pages:
             try:
@@ -470,7 +471,7 @@ def scrape_category_thread(category_slug, max_companies):
         scraping_status['message'] = f'🔓 Otevírám {source.upper()}...'
         
         driver.get(category_url)
-        time.sleep(2)  # Zkráceno z 5s na 2s
+        time.sleep(1)  # Rychlé načtení
         
         # KROK 2: Načíst firmy
         scraping_status['message'] = f'📂 Načítám firmy z kategorie...'
@@ -487,35 +488,17 @@ def scrape_category_thread(category_slug, max_companies):
         
         # KROK 3: Zpracovat firmy podle zdroje
         if source == 'panorama':
-            # Panorama - už máme všechno ze stránky
+            # Panorama - už máme všechno ze stránky, NEHLEDAT NIC navíc!
             for idx, company_data in enumerate(company_names, 1):
                 scraping_status['current_company'] = company_data['name']
                 scraping_status['progress'] = idx
                 
-                # Pokud chybí email nebo web, zkusit Google (RYCHLE - přeskočit co máme)
-                website = company_data['website']
-                email = company_data['email']
-                
-                # Pokud máme obojí z Panorama, přeskočit Google
-                if website and email:
-                    pass  # Už máme vše, nic nehledat
-                else:
-                    if not website:
-                        website = google_search_website(driver, company_data['name'])
-                    
-                    if not email and website:
-                        email = find_email_on_website(website)
-                    
-                    if not email:
-                        email = google_search_email(driver, company_data['name'])
-                
+                # Použít přímo data z Panorama, žádné Google vyhledávání!
                 scraping_status['results'].append({
                     'name': company_data['name'],
-                    'website': website or '',
-                    'email': email or ''
+                    'website': company_data['website'] or '',
+                    'email': company_data['email'] or ''
                 })
-                
-                time.sleep(0.05)  # Minimální zpoždění
         else:
             # ALEO - hledat web a email pro každou firmu
             for idx, company_name in enumerate(company_names, 1):
