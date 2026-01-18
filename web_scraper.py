@@ -355,7 +355,7 @@ def google_search_website(driver, company_name):
         query = f"{short_name} Poland"
         url = f"https://www.google.com/search?q={requests.utils.quote(query)}&hl=pl"
         driver.get(url)
-        time.sleep(1)  # Zkráceno z 2s na 1s
+        time.sleep(0.3)  # Rychlé načtení Google výsledků
         
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         links = soup.find_all('a')
@@ -390,7 +390,7 @@ def google_search_email(driver, company_name):
         query = f"{short_name} email kontakt Poland"
         url = f"https://www.google.com/search?q={requests.utils.quote(query)}&hl=pl"
         driver.get(url)
-        time.sleep(2)
+        time.sleep(0.3)  # Rychlé načtení Google výsledků
         
         emails = EMAIL_PATTERN.findall(driver.page_source)
         
@@ -416,7 +416,7 @@ def find_email_on_website(url):
         
         for page_url in pages:
             try:
-                response = requests.get(page_url, headers=headers, timeout=10)
+                response = requests.get(page_url, headers=headers, timeout=3)
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, 'html.parser')
                     text = soup.get_text()
@@ -491,18 +491,22 @@ def scrape_category_thread(category_slug, max_companies):
                 scraping_status['current_company'] = company_data['name']
                 scraping_status['progress'] = idx
                 
-                # Pokud chybí email nebo web, zkusit Google
+                # Pokud chybí email nebo web, zkusit Google (RYCHLE - přeskočit co máme)
                 website = company_data['website']
                 email = company_data['email']
                 
-                if not website:
-                    website = google_search_website(driver, company_data['name'])
-                
-                if not email and website:
-                    email = find_email_on_website(website)
-                
-                if not email:
-                    email = google_search_email(driver, company_data['name'])
+                # Pokud máme obojí z Panorama, přeskočit Google
+                if website and email:
+                    pass  # Už máme vše, nic nehledat
+                else:
+                    if not website:
+                        website = google_search_website(driver, company_data['name'])
+                    
+                    if not email and website:
+                        email = find_email_on_website(website)
+                    
+                    if not email:
+                        email = google_search_email(driver, company_data['name'])
                 
                 scraping_status['results'].append({
                     'name': company_data['name'],
@@ -510,7 +514,7 @@ def scrape_category_thread(category_slug, max_companies):
                     'email': email or ''
                 })
                 
-                time.sleep(0.2)  # Zkráceno z 0.5s na 0.2s
+                time.sleep(0.05)  # Minimální zpoždění
         else:
             # ALEO - hledat web a email pro každou firmu
             for idx, company_name in enumerate(company_names, 1):
@@ -532,7 +536,7 @@ def scrape_category_thread(category_slug, max_companies):
                     'email': email or ''
                 })
                 
-                time.sleep(0.3)  # Zkráceno z 1s na 0.3s
+                time.sleep(0.1)  # Minimální zpoždění
         
         # Uložit CSV
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
