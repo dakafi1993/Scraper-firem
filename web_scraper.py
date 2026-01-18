@@ -305,40 +305,12 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 # Panorama Firm - celý záznam s webem a emailem
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
                 
-                # DEBUG: Analyzovat strukturu stránky
-                if i == 0:  # První scroll
-                    print("\n=== DEBUG PANORAMA HTML ===")
-                    # Najít všechny h2 tagy (názvy firem)
-                    h2_tags = soup.find_all('h2')
-                    print(f"Celkem H2 tagů: {len(h2_tags)}")
-                    
-                    # Vypsat první 3 h2 tagy
-                    for idx, h2 in enumerate(h2_tags[:3]):
-                        print(f"\nH2 #{idx+1}:")
-                        print(f"  Text: {h2.get_text(strip=True)}")
-                        print(f"  Class: {h2.get('class')}")
-                        print(f"  Parent: {h2.parent.name if h2.parent else 'None'}")
-                        print(f"  Parent class: {h2.parent.get('class') if h2.parent else 'None'}")
-                    
-                    # Hledat divy s různými třídami
-                    print(f"\nDiv elementy:")
-                    for class_name in ['company', 'firm', 'result', 'listing', 'card', 'item']:
-                        divs = soup.find_all('div', class_=lambda c: c and class_name in str(c).lower() if c else False)
-                        if divs:
-                            print(f"  Div s '{class_name}': {len(divs)}")
-                    
-                    print("=========================\n")
-                
-                # Extrakce dat - zkusit h2 elementy
-                h2_tags = soup.find_all('h2')
+                # Najít všechny H2 tagy s názvy firem
+                h2_tags = soup.find_all('h2', class_=lambda c: c and 'text-h1' in c if c else False)
                 
                 for h2 in h2_tags:
-                    # Získat název
-                    a_tag = h2.find('a')
-                    if a_tag:
-                        name = a_tag.get_text(strip=True)
-                    else:
-                        name = h2.get_text(strip=True)
+                    # Získat název firmy
+                    name = h2.get_text(strip=True)
                     
                     # Filtrovat nerelevantní názvy
                     if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie') or len(name) < 3:
@@ -347,25 +319,31 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     website = None
                     email = None
                     
-                    # Najít nejbližší parent div nebo article
-                    parent = h2.parent
+                    # Najít parent kontejner (div s 'item' třídou nebo jeho parent)
+                    container = h2.parent
                     search_depth = 0
-                    while parent and search_depth < 5:
-                        if parent.name in ['div', 'article', 'section']:
+                    while container and search_depth < 10:
+                        class_str = ' '.join(container.get('class', [])) if container.get('class') else ''
+                        if 'item' in class_str.lower():
                             break
-                        parent = parent.parent
+                        container = container.parent
                         search_depth += 1
                     
-                    if parent:
-                        # Hledat web - jakýkoliv http link kromě /firma/
-                        for link in parent.find_all('a', href=True):
+                    if container:
+                        # Hledat web - jakýkoliv http link kromě /firma/ a panoramafirm.pl
+                        for link in container.find_all('a', href=True):
                             href = link.get('href', '')
-                            if href.startswith('http') and '/firma/' not in href and 'panoramafirm.pl' not in href:
+                            # Skip internal links
+                            if (href.startswith('http') and 
+                                '/firma/' not in href and 
+                                'panoramafirm.pl' not in href and
+                                'facebook.com' not in href and
+                                'linkedin.com' not in href):
                                 website = href
                                 break
                         
-                        # Hledat email
-                        text = parent.get_text()
+                        # Hledat email v textu kontejneru
+                        text = container.get_text()
                         email_match = EMAIL_PATTERN.search(text)
                         if email_match:
                             email = email_match.group(0)
