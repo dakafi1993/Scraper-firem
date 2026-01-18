@@ -1,1 +1,1 @@
-web: gunicorn web_scraper:app --bind 0.0.0.0:$PORT --timeout 300
+web: gunicorn web_scraper:app --bind 0.0.0.0:${PORT:-8080} --timeout 300
