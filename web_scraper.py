@@ -18,6 +18,11 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+import logging
+
+# Nastavit logování
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -346,13 +351,18 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         seen_names.add(name)
                 
                 scraping_status['message'] = f'📂 Načteno {len(company_details)} firem ze seznamu... (scroll {i+1}/{scroll_attempts})'
+                logger.info(f"Po scrollu {i+1}: Celkem {len(company_details)} firem")
                 
                 if len(company_details) >= max_companies:
                     break
             
+            logger.info(f"Fáze 1 dokončena: Našel jsem {len(company_details)} firem")
+            logger.info(f"Zahajuji Fázi 2: Procházení detailů {min(len(company_details), max_companies)} firem")
+            
             # KROK 2: Projít detail každé firmy
             for idx, company in enumerate(company_details[:max_companies], 1):
                 scraping_status['message'] = f'🔍 Zpracovávám {idx}/{min(len(company_details), max_companies)}: {company["name"]}'
+                logger.info(f"[{idx}/{min(len(company_details), max_companies)}] Otevírám detail: {company['name']}")
                 
                 website = None
                 email = None
@@ -361,6 +371,7 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     # Otevřít detail firmy
                     driver.get(company['url'])
                     time.sleep(2)
+                    logger.info(f"  Detail načten: {company['url']}")
                     
                     detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
                     
@@ -378,6 +389,7 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                             'twitter.com' not in href and
                             'youtube.com' not in href):
                             website = href
+                            logger.info(f"  Nalezen web: {website}")
                             break
                     
                     # Hledat email na celé stránce
@@ -386,9 +398,16 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         # Filtrovat nerelevantní emaily
                         if not any(skip in potential_email.lower() for skip in ['example', 'test@', 'noreply', '@panorama', '@google', '@facebook']):
                             email = potential_email
+                            logger.info(f"  Nalezen email: {email}")
                             break
                     
+                    if not website:
+                        logger.info(f"  Web nenalezen")
+                    if not email:
+                        logger.info(f"  Email nenalezen")
+                    
                 except Exception as e:
+                    logger.error(f"  Chyba při zpracování {company['name']}: {str(e)}")
                     scraping_status['message'] = f'⚠️ Chyba u {company["name"]}: {str(e)}'
                     time.sleep(1)
                 
@@ -498,6 +517,11 @@ def scrape_category_thread(category_slug, category_title, max_companies):
     """Hlavní scraping funkce (běží v threadu)"""
     global scraping_status
     
+    logger.info(f"=== ZAČÁTEK SCRAPOVÁNÍ ===")
+    logger.info(f"Kategorie: {category_title}")
+    logger.info(f"Slug: {category_slug}")
+    logger.info(f"Max firem: {max_companies}")
+    
     scraping_status['running'] = True
     scraping_status['progress'] = 0
     scraping_status['total'] = max_companies
@@ -510,9 +534,12 @@ def scrape_category_thread(category_slug, category_title, max_companies):
     try:
         # Pokus o inicializaci Chrome
         try:
+            logger.info("Inicializuji Chrome driver...")
             driver = setup_driver()
+            logger.info("Chrome driver úspěšně inicializován")
             scraping_status['message'] = '✅ Chrome spuštěn'
         except Exception as e:
+            logger.error(f"Chyba při spuštění Chrome: {str(e)}", exc_info=True)
             scraping_status['message'] = f'❌ Chyba při spuštění Chrome: {str(e)}'
             scraping_status['running'] = False
             return
@@ -522,42 +549,57 @@ def scrape_category_thread(category_slug, category_title, max_companies):
             source = 'aleo'
             category_name = category_slug.replace('aleo_', '')
             category_url = f"https://aleo.com/pl/firmy/{category_name}"
+            logger.info(f"Zdroj: ALEO, URL: {category_url}")
         elif category_slug.startswith('panorama_'):
             source = 'panorama'
             # Panorama má celý URL ve slugu
             category_url = category_slug.replace('panorama_', '')
+            logger.info(f"Zdroj: PANORAMA, URL: {category_url}")
+            source = 'panorama'
+            # Panorama má celý URL ve slugu
+            category_url = category_slug.replace('panorama_', '')
         else:
+            logger.error(f"Neznámý zdroj kategorie: {category_slug}")
             scraping_status['message'] = '❌ Neznámý zdroj'
             scraping_status['running'] = False
             return
         
         # KROK 1: Otevřít stránku
+        logger.info(f"Otevírám URL: {category_url}")
         scraping_status['message'] = f'🔓 Otevírám {source.upper()}...'
         
         driver.get(category_url)
         time.sleep(5)  # Počkat na načtení stránky
+        logger.info("Stránka načtena")
         
         # KROK 2: Načíst firmy
         scraping_status['message'] = f'📂 Načítám firmy z kategorie...'
+        logger.info(f"Volám extract_company_names() pro zdroj: {source}")
         
         company_names = extract_company_names(driver, category_url, max_companies, source)
         
+        logger.info(f"extract_company_names() vrátilo {len(company_names) if company_names else 0} firem")
+        
         if not company_names:
+            logger.warning("Žádné firmy nenalezeny!")
             scraping_status['message'] = '❌ Žádné firmy nenalezeny'
             scraping_status['running'] = False
             return
         
         scraping_status['total'] = len(company_names)
         scraping_status['message'] = f'✅ Nalezeno {len(company_names)} firem, zpracovávám...'
+        logger.info(f"Celkem nalezeno {len(company_names)} firem")
         
         # KROK 3: Zpracovat firmy podle zdroje
         if source == 'panorama':
-            # Panorama - POUZE DATA ZE STRÁNKY, ŽÁDNÉ GOOGLE VYHLEDÁVÁNÍ!
+            logger.info("Zpracovávám firmy z Panorama (používám data přímo z extract_company_names)")
+            # Panorama - data už jsou z detailů
             for idx, company_data in enumerate(company_names, 1):
                 scraping_status['current_company'] = company_data['name']
                 scraping_status['progress'] = idx
+                logger.info(f"[{idx}/{len(company_names)}] {company_data['name']} - Web: {company_data['website']}, Email: {company_data['email']}")
                 
-                # Použít přímo data z Panorama (RYCHLÉ!)
+                # Použít přímo data z Panorama
                 scraping_status['results'].append({
                     'category': category_title,
                     'name': company_data['name'],
@@ -656,6 +698,7 @@ def index():
 @app.route('/start', methods=['POST'])
 def start_scraping():
     if scraping_status['running']:
+        logger.warning("Scraping již běží - odmítám nový požadavek")
         return jsonify({'error': 'Scraping již běží'}), 400
     
     try:
@@ -663,17 +706,23 @@ def start_scraping():
         category = data.get('category')
         max_companies = int(data.get('max_companies', 10))
         
+        logger.info(f"Přijat požadavek na scraping: kategorie={category}, max_companies={max_companies}")
+        
         if category not in CATEGORIES:
+            logger.error(f"Neplatná kategorie: {category}")
             return jsonify({'error': 'Neplatná kategorie'}), 400
         
         category_title = CATEGORIES[category]
         
+        logger.info(f"Spouštím scraping thread pro: {category_title}")
         # Spustit v threadu
         thread = threading.Thread(target=scrape_category_thread, args=(category, category_title, max_companies))
         thread.start()
+        logger.info("Thread spuštěn")
         
         return jsonify({'status': 'started'})
     except Exception as e:
+        logger.error(f"Chyba při startu scrapingu: {str(e)}", exc_info=True)
         return jsonify({'error': f'Chyba při spuštění: {str(e)}'}), 500
 
 @app.route('/status')
