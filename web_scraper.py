@@ -304,40 +304,45 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
             else:  # panorama
                 # Panorama Firm - celý záznam s webem a emailem
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
-                h2_tags = soup.find_all('h2')
                 
-                for h2 in h2_tags:
-                    a_tag = h2.find('a')
-                    if not a_tag:
+                # Hledat firmy v divech s class "company-item"
+                company_divs = soup.find_all('div', class_='company-item')
+                
+                for company_div in company_divs:
+                    # Název firmy
+                    name_elem = company_div.find('h2', class_='company-name')
+                    if not name_elem:
+                        name_elem = company_div.find('a', class_='company-name')
+                    if not name_elem:
+                        # Zkusit najít jakýkoliv h2 nebo silný link
+                        name_elem = company_div.find('h2')
+                        if not name_elem:
+                            name_elem = company_div.find('a', href=lambda h: h and '/firma/' in h if h else False)
+                    
+                    if not name_elem:
                         continue
                     
-                    name = a_tag.get_text(strip=True)
+                    name = name_elem.get_text(strip=True)
                     
                     # Filtrovat nerelevantní názvy
                     if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie'):
                         continue
                     
-                    # Najít rodičovský element s kontakty
-                    parent = h2.find_parent()
-                    while parent and parent.name != 'article':
-                        parent = parent.find_parent()
-                    
                     website = None
                     email = None
                     
-                    if parent:
-                        # Hledat web - ikona "website icon blue"
-                        web_link = parent.find('a', href=True, title=lambda t: t and 'www' in t.lower() if t else False)
-                        if not web_link:
-                            web_link = parent.find('a', class_=lambda c: c and 'website' in str(c).lower() if c else False)
-                        if web_link and web_link.get('href'):
-                            website = web_link['href']
-                        
-                        # Hledat email v textu
-                        text = parent.get_text()
-                        email_match = EMAIL_PATTERN.search(text)
-                        if email_match:
-                            email = email_match.group(0)
+                    # Hledat web - různé možné selektory
+                    web_link = company_div.find('a', class_=lambda c: c and ('website' in str(c) or 'www' in str(c)) if c else False)
+                    if not web_link:
+                        web_link = company_div.find('a', href=lambda h: h and h.startswith('http') and '/firma/' not in h if h else False)
+                    if web_link and web_link.get('href'):
+                        website = web_link['href']
+                    
+                    # Hledat email v celém textu karty
+                    text = company_div.get_text()
+                    email_match = EMAIL_PATTERN.search(text)
+                    if email_match:
+                        email = email_match.group(0)
                     
                     all_data.append({
                         'name': name,
