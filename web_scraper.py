@@ -356,8 +356,10 @@ def google_search_website(driver, company_name):
         
         query = f"{short_name} Poland"
         url = f"https://www.google.com/search?q={requests.utils.quote(query)}&hl=pl"
+        
+        driver.set_page_load_timeout(10)  # Max 10s na načtení
         driver.get(url)
-        time.sleep(2)
+        time.sleep(1)  # Zkráceno z 2s
         
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         links = soup.find_all('a')
@@ -391,8 +393,10 @@ def google_search_email(driver, company_name):
         
         query = f"{short_name} email kontakt Poland"
         url = f"https://www.google.com/search?q={requests.utils.quote(query)}&hl=pl"
+        
+        driver.set_page_load_timeout(10)  # Max 10s na načtení
         driver.get(url)
-        time.sleep(2)
+        time.sleep(1)  # Zkráceno z 2s
         
         emails = EMAIL_PATTERN.findall(driver.page_source)
         
@@ -417,7 +421,7 @@ def find_email_on_website(url):
         
         for page_url in pages:
             try:
-                response = requests.get(page_url, headers=headers, timeout=10)
+                response = requests.get(page_url, headers=headers, timeout=5)  # Zkráceno z 10s
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.text, 'html.parser')
                     text = soup.get_text()
