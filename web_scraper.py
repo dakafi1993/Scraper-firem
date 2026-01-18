@@ -36,7 +36,14 @@ scraping_status = {
 }
 
 CATEGORIES = {
-    # PANORAMA FIRM - Przemysł i energetyka (všechny podkategorie)
+    # DEMO VERZE - Pouze 2 kategorie (po zaplacení odkomentujte zbytek)
+    'panorama_https://panoramafirm.pl/aerozole': 'PANORAMA: Aerozole',
+    'panorama_https://panoramafirm.pl/agregaty_pr%C4%85dotw%C3%B3rcze': 'PANORAMA: Agregaty prądotwórcze',
+}
+
+# Po zaplacení odkomentujte všechny kategorie níže a smažte řádek výše s }
+"""
+CATEGORIES = {
     'panorama_https://panoramafirm.pl/aerozole': 'PANORAMA: Aerozole',
     'panorama_https://panoramafirm.pl/agregaty_pr%C4%85dotw%C3%B3rcze': 'PANORAMA: Agregaty prądotwórcze',
     'panorama_https://panoramafirm.pl/agregaty_komory_i_meble_ch%C5%82odnicze': 'PANORAMA: Agregaty, komory i meble chłodnicze',
@@ -220,6 +227,7 @@ CATEGORIES = {
     'panorama_https://panoramafirm.pl/zbiorniki_i_pojemniki': 'PANORAMA: Zbiorniki i pojemniki',
     'panorama_https://panoramafirm.pl/z%C5%82om_i_surowce_wt%C3%B3rne': 'PANORAMA: Złom i surowce wtórne',
 }
+"""
 
 def setup_driver():
     """Nastavení Chrome driveru"""
