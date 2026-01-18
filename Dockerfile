@@ -25,11 +25,12 @@ COPY . .
 RUN mkdir -p output
 
 # Exponovat port
-EXPOSE 5000
+EXPOSE ${PORT:-8080}
 
 # Nastavit proměnné prostředí
 ENV FLASK_APP=web_scraper.py
 ENV PYTHONUNBUFFERED=1
+ENV PORT=${PORT:-8080}
 
-# Spustit Flask
-CMD ["python3", "web_scraper.py"]
+# Spustit pomocí Gunicorn
+CMD gunicorn web_scraper:app --bind 0.0.0.0:${PORT:-8080} --timeout 300
