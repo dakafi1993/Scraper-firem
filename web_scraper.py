@@ -225,6 +225,7 @@ CATEGORIES = {
     'panorama_https://panoramafirm.pl/zbiorniki_i_pojemniki': 'PANORAMA: Zbiorniki i pojemniki',
     'panorama_https://panoramafirm.pl/z%C5%82om_i_surowce_wt%C3%B3rne': 'PANORAMA: Złom i surowce wtórne',
 }
+"""
 
 def setup_driver():
     """Nastavení Chrome driveru"""
