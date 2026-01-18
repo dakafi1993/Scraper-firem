@@ -499,31 +499,17 @@ def scrape_category_thread(category_slug, max_companies):
         
         # KROK 3: Zpracovat firmy podle zdroje
         if source == 'panorama':
-            # Panorama - už máme všechno ze stránky
+            # Panorama - POUZE DATA ZE STRÁNKY, ŽÁDNÉ GOOGLE VYHLEDÁVÁNÍ!
             for idx, company_data in enumerate(company_names, 1):
                 scraping_status['current_company'] = company_data['name']
                 scraping_status['progress'] = idx
                 
-                # Pokud chybí email nebo web, zkusit Google
-                website = company_data['website']
-                email = company_data['email']
-                
-                if not website:
-                    website = google_search_website(driver, company_data['name'])
-                
-                if not email and website:
-                    email = find_email_on_website(website)
-                
-                if not email:
-                    email = google_search_email(driver, company_data['name'])
-                
+                # Použít přímo data z Panorama (RYCHLÉ!)
                 scraping_status['results'].append({
                     'name': company_data['name'],
-                    'website': website or '',
-                    'email': email or ''
+                    'website': company_data['website'] or '',
+                    'email': company_data['email'] or ''
                 })
-                
-                time.sleep(0.5)
         else:
             # ALEO - hledat web a email pro každou firmu
             for idx, company_name in enumerate(company_names, 1):
