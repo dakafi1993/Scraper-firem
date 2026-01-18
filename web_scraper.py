@@ -438,9 +438,10 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         logger.info(f"  ⚠️ Web nenalezen - přeskakuji firmu")
                         continue
                     
-                    # Pokud email nenalezen, vypsat varování ale firmu ULOŽIT
+                    # Pokud email nenalezen, TAKÉ přeskočit
                     if not email:
-                        logger.info(f"  Email nenalezen")
+                        logger.info(f"  ⚠️ Email nenalezen - přeskakuji firmu")
+                        continue
                     
                 except Exception as e:
                     logger.error(f"  Chyba při zpracování {company['name']}: {str(e)}")
