@@ -488,12 +488,15 @@
                     // Začít sledovat status
                     statusInterval = setInterval(updateStatus, 1000);
                 } else {
-                    alert('Chyba při spuštění');
+                    const errorData = await response.json();
+                    alert(errorData.error || 'Chyba při spuštění');
                     startBtn.disabled = false;
+                    statusBox.classList.remove('active');
                 }
             } catch (error) {
                 alert('Chyba: ' + error);
                 startBtn.disabled = false;
+                statusBox.classList.remove('active');
             }
         }
         

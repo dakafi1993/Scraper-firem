@@ -30,6 +30,7 @@ scraping_status = {
     'progress': 0,
     'total': 0,
     'current_company': '',
+    'category': '',
     'results': [],
     'output_file': None,
     'message': ''
@@ -305,16 +306,10 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 # Panorama Firm - celý záznam s webem a emailem
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
                 
-                # Najít všechny divy s třídou obsahující "item" (karty firem)
-                item_divs = soup.find_all('div', class_=lambda c: c and 'item' in ' '.join(c).lower() if c else False)
+                # Najít všechny H2 s třídou 'text-h1' - každý představuje jednu firmu
+                h2_elements = soup.find_all('h2', class_=lambda c: c and 'text-h1' in c if c else False)
                 
-                for item_div in item_divs:
-                    # Najít H2 s názvem firmy uvnitř tohoto item divu
-                    h2 = item_div.find('h2', class_=lambda c: c and 'text-h1' in c if c else False)
-                    
-                    if not h2:
-                        continue
-                    
+                for h2 in h2_elements:
                     # Získat název firmy
                     name = h2.get_text(strip=True)
                     
@@ -322,11 +317,24 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie') or len(name) < 3:
                         continue
                     
+                    # Najít rodičovský kontejner firmy (obvykle několik úrovní nahoru)
+                    parent = h2.parent
+                    # Jít nahoru dokud nenajdeme velký kontejner s více informacemi
+                    for _ in range(5):  # Max 5 úrovní nahoru
+                        if parent and parent.name == 'div':
+                            # Zkontrolovat, jestli tento div obsahuje dostatek informací
+                            if len(parent.find_all('a')) > 2:  # Má více linků
+                                break
+                        parent = parent.parent if parent else None
+                    
+                    if not parent:
+                        parent = h2.parent  # Fallback na přímého rodiče
+                    
                     website = None
                     email = None
                     
-                    # Hledat web POUZE v tomto item_div (ne na celé stránce!)
-                    for link in item_div.find_all('a', href=True):
+                    # Hledat web v rodičovském kontejneru
+                    for link in parent.find_all('a', href=True):
                         href = link.get('href', '')
                         # Skip internal links a social media
                         if (href.startswith('http') and 
@@ -339,8 +347,8 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                             website = href
                             break
                     
-                    # Hledat email POUZE v textu tohoto item_div
-                    text = item_div.get_text()
+                    # Hledat email v textu rodičovského kontejneru
+                    text = parent.get_text()
                     email_match = EMAIL_PATTERN.search(text)
                     if email_match:
                         email = email_match.group(0)
@@ -455,20 +463,28 @@ def find_email_on_website(url):
     except:
         return None
 
-def scrape_category_thread(category_slug, max_companies):
+def scrape_category_thread(category_slug, category_title, max_companies):
     """Hlavní scraping funkce (běží v threadu)"""
     global scraping_status
     
     scraping_status['running'] = True
     scraping_status['progress'] = 0
     scraping_status['total'] = max_companies
+    scraping_status['category'] = category_title
     scraping_status['results'] = []
     scraping_status['message'] = '🚀 Spouštím Chrome...'
     
     driver = None
     
     try:
-        driver = setup_driver()
+        # Pokus o inicializaci Chrome
+        try:
+            driver = setup_driver()
+            scraping_status['message'] = '✅ Chrome spuštěn'
+        except Exception as e:
+            scraping_status['message'] = f'❌ Chyba při spuštění Chrome: {str(e)}'
+            scraping_status['running'] = False
+            return
         
         # Rozpoznat zdroj
         if category_slug.startswith('aleo_'):
@@ -512,6 +528,7 @@ def scrape_category_thread(category_slug, max_companies):
                 
                 # Použít přímo data z Panorama (RYCHLÉ!)
                 scraping_status['results'].append({
+                    'category': category_title,
                     'name': company_data['name'],
                     'website': company_data['website'] or '',
                     'email': company_data['email'] or ''
@@ -532,6 +549,7 @@ def scrape_category_thread(category_slug, max_companies):
                     email = google_search_email(driver, company_name)
                 
                 scraping_status['results'].append({
+                    'category': category_title,
                     'name': company_name,
                     'website': website or '',
                     'email': email or ''
@@ -551,6 +569,7 @@ def scrape_category_thread(category_slug, max_companies):
         clean_results = []
         for result in scraping_status['results']:
             clean_results.append({
+                'Kategorie': result.get('category', ''),
                 'Název firmy': result['name'],
                 'Web': result['website'],
                 'Email': result['email']
@@ -608,18 +627,23 @@ def start_scraping():
     if scraping_status['running']:
         return jsonify({'error': 'Scraping již běží'}), 400
     
-    data = request.json
-    category = data.get('category')
-    max_companies = int(data.get('max_companies', 10))
-    
-    if category not in CATEGORIES:
-        return jsonify({'error': 'Neplatná kategorie'}), 400
-    
-    # Spustit v threadu
-    thread = threading.Thread(target=scrape_category_thread, args=(category, max_companies))
-    thread.start()
-    
-    return jsonify({'status': 'started'})
+    try:
+        data = request.json
+        category = data.get('category')
+        max_companies = int(data.get('max_companies', 10))
+        
+        if category not in CATEGORIES:
+            return jsonify({'error': 'Neplatná kategorie'}), 400
+        
+        category_title = CATEGORIES[category]
+        
+        # Spustit v threadu
+        thread = threading.Thread(target=scrape_category_thread, args=(category, category_title, max_companies))
+        thread.start()
+        
+        return jsonify({'status': 'started'})
+    except Exception as e:
+        return jsonify({'error': f'Chyba při spuštění: {str(e)}'}), 500
 
 @app.route('/status')
 def get_status():
