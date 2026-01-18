@@ -305,24 +305,31 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 # Panorama Firm - celý záznam s webem a emailem
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
                 
-                # Hledat firmy v divech s class "company-item"
-                company_divs = soup.find_all('div', class_='company-item')
+                # DEBUG: Uložit HTML pro analýzu
+                if i == 0:  # První scroll
+                    with open('/tmp/panorama_debug.html', 'w', encoding='utf-8') as f:
+                        f.write(soup.prettify())
+                    print("DEBUG: HTML uloženo do /tmp/panorama_debug.html")
                 
-                for company_div in company_divs:
-                    # Název firmy
-                    name_elem = company_div.find('h2', class_='company-name')
-                    if not name_elem:
-                        name_elem = company_div.find('a', class_='company-name')
-                    if not name_elem:
-                        # Zkusit najít jakýkoliv h2 nebo silný link
-                        name_elem = company_div.find('h2')
-                        if not name_elem:
-                            name_elem = company_div.find('a', href=lambda h: h and '/firma/' in h if h else False)
-                    
-                    if not name_elem:
-                        continue
-                    
-                    name = name_elem.get_text(strip=True)
+                # Zkusit různé možné struktury
+                companies_found = 0
+                
+                # Možnost 1: Hledat všechny <article> elementy
+                articles = soup.find_all('article')
+                print(f"DEBUG: Nalezeno {len(articles)} article elementů")
+                
+                for article in articles:
+                    # Název - hledat v h2 nebo h3
+                    name_elem = article.find('h2') or article.find('h3')
+                    if name_elem:
+                        name = name_elem.get_text(strip=True)
+                    else:
+                        # Zkusit najít link s třídou obsahující "name" nebo "company"
+                        name_link = article.find('a', class_=lambda c: c and ('name' in str(c).lower() or 'company' in str(c).lower()) if c else False)
+                        if name_link:
+                            name = name_link.get_text(strip=True)
+                        else:
+                            continue
                     
                     # Filtrovat nerelevantní názvy
                     if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie'):
@@ -331,15 +338,15 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     website = None
                     email = None
                     
-                    # Hledat web - různé možné selektory
-                    web_link = company_div.find('a', class_=lambda c: c and ('website' in str(c) or 'www' in str(c)) if c else False)
-                    if not web_link:
-                        web_link = company_div.find('a', href=lambda h: h and h.startswith('http') and '/firma/' not in h if h else False)
-                    if web_link and web_link.get('href'):
-                        website = web_link['href']
+                    # Hledat web - link začínající http ale ne /firma/
+                    for link in article.find_all('a', href=True):
+                        href = link.get('href', '')
+                        if href.startswith('http') and '/firma/' not in href:
+                            website = href
+                            break
                     
-                    # Hledat email v celém textu karty
-                    text = company_div.get_text()
+                    # Hledat email v celém textu
+                    text = article.get_text()
                     email_match = EMAIL_PATTERN.search(text)
                     if email_match:
                         email = email_match.group(0)
@@ -350,6 +357,9 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         'email': email or ''
                     })
                     seen_names.add(name)
+                    companies_found += 1
+                
+                print(f"DEBUG: Extrahováno {companies_found} firem z article elementů")
             
             scraping_status['message'] = f'📂 Načteno {len(all_data)} firem... (scroll {i+1}/{scroll_attempts})'
             
