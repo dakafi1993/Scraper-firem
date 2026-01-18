@@ -382,7 +382,9 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
             logger.info(f"Fáze 1 dokončena: Našel jsem {len(company_details)} firem")
             logger.info(f"Zahajuji Fázi 2: Procházení detailů {min(len(company_details), max_companies)} firem")
             
-            # KROK 2: Projít detail každé firmy
+            # KROK 2: Projít detail každé firmy - PO MENŠÍCH DÁVKÁCH
+            batch_size = 3  # Zpracovat max 3 firmy najednou, pak vyprázdnit paměť
+            
             for idx, company in enumerate(company_details[:max_companies], 1):
                 scraping_status['message'] = f'🔍 Zpracovávám {idx}/{min(len(company_details), max_companies)}: {company["name"]}'
                 logger.info(f"[{idx}/{min(len(company_details), max_companies)}] Otevírám detail: {company['name']}")
@@ -392,12 +394,15 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 
                 try:
                     # Otevřít detail firmy s timeoutem
-                    driver.set_page_load_timeout(10)  # Max 10 sekund
+                    driver.set_page_load_timeout(8)  # Max 8 sekund
                     driver.get(company['url'])
-                    time.sleep(1)  # Zkráceno z 2s
+                    time.sleep(0.5)  # Zkráceno na minimum
                     logger.info(f"  Detail načten: {company['url'][:80]}")
                     
-                    detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
+                    # Získat HTML a HNED smazat z paměti driveru
+                    html = driver.page_source
+                    detail_soup = BeautifulSoup(html, 'html.parser')
+                    del html  # Uvolnit paměť
                     
                     # Hledat web - všechny externí linky
                     for link in detail_soup.find_all('a', href=True):
@@ -440,6 +445,17 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     'website': website or '',
                     'email': email or ''
                 })
+                
+                # DŮLEŽITÉ: Po každých 3 firmách restartovat Chrome (uvolnit RAM)
+                if idx % batch_size == 0 and idx < min(len(company_details), max_companies):
+                    logger.info(f"⚠️ Dávka {idx//batch_size} dokončena - restartuji Chrome pro uvolnění paměti")
+                    try:
+                        driver.quit()
+                    except:
+                        pass
+                    time.sleep(2)
+                    driver = setup_driver()
+                    logger.info(f"✅ Chrome restartován, pokračuji...")
             
             return all_data
         
