@@ -285,29 +285,39 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
         all_data = []
         seen_names = set()
         
-        # Scroll a načítej více firem
-        scroll_attempts = max_companies // 25 + 2  # Kolikrát scrollovat
-        
-        for i in range(scroll_attempts):
-            # Scroll dolů
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(3)
+        if source == 'aleo':
+            # ALEO.com - pouze názvy
+            scroll_attempts = max_companies // 25 + 2
             
-            # Získat aktuální firmy podle zdroje
-            if source == 'aleo':
-                # ALEO.com - pouze názvy
+            for i in range(scroll_attempts):
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(3)
+                
                 companies = driver.find_elements(By.CLASS_NAME, "catalog-row-first-line__company-name")
                 for company in companies:
                     name = company.text.strip()
                     if name and name not in seen_names:
                         all_data.append(name)
                         seen_names.add(name)
-            else:  # panorama
-                # KROK 1: Načíst všechny firmy ze stránky
+                
+                scraping_status['message'] = f'📂 Načteno {len(all_data)} firem... (scroll {i+1}/{scroll_attempts})'
+                
+                if len(all_data) >= max_companies:
+                    break
+            
+            return all_data[:max_companies]
+            
+        else:  # panorama
+            # KROK 1: Scrollovat a načíst seznam firem s jejich detail URL
+            company_details = []
+            scroll_attempts = max_companies // 25 + 2
+            
+            for i in range(scroll_attempts):
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(3)
+                
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
                 h2_elements = soup.find_all('h2', class_=lambda c: c and 'text-h1' in c if c else False)
-                
-                company_details = []  # Seznam (název, detail_url)
                 
                 for h2 in h2_elements:
                     name = h2.get_text(strip=True)
@@ -331,69 +341,64 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         else:
                             break
                     
-                    if detail_link:
+                    if detail_link and name not in seen_names:
                         company_details.append({'name': name, 'url': detail_link})
                         seen_names.add(name)
                 
-                # KROK 2: Projít detail každé firmy
-                for idx, company in enumerate(company_details[:max_companies], 1):
-                    scraping_status['message'] = f'🔍 Zpracovávám {idx}/{min(len(company_details), max_companies)}: {company["name"]}'
-                    
-                    website = None
-                    email = None
-                    
-                    try:
-                        # Otevřít detail firmy
-                        driver.get(company['url'])
-                        time.sleep(2)
-                        
-                        detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
-                        
-                        # Hledat web - všechny externí linky
-                        for link in detail_soup.find_all('a', href=True):
-                            href = link.get('href', '')
-                            
-                            # Najít web link (mimo Panorama a social media)
-                            if (href.startswith('http') and 
-                                'panoramafirm.pl' not in href and
-                                '/firma/' not in href and
-                                'facebook.com' not in href and
-                                'linkedin.com' not in href and
-                                'instagram.com' not in href and
-                                'twitter.com' not in href and
-                                'youtube.com' not in href):
-                                website = href
-                                break
-                        
-                        # Hledat email na celé stránce
-                        all_emails = EMAIL_PATTERN.findall(driver.page_source)
-                        for potential_email in all_emails:
-                            # Filtrovat nerelevantní emaily
-                            if not any(skip in potential_email.lower() for skip in ['example', 'test@', 'noreply', '@panorama', '@google', '@facebook']):
-                                email = potential_email
-                                break
-                        
-                    except Exception as e:
-                        scraping_status['message'] = f'⚠️ Chyba u {company["name"]}: {str(e)}'
-                        time.sleep(1)
-                    
-                    all_data.append({
-                        'name': company['name'],
-                        'website': website or '',
-                        'email': email or ''
-                    })
-                    
-                    if len(all_data) >= max_companies:
-                        break
+                scraping_status['message'] = f'📂 Načteno {len(company_details)} firem ze seznamu... (scroll {i+1}/{scroll_attempts})'
+                
+                if len(company_details) >= max_companies:
+                    break
             
-            scraping_status['message'] = f'📂 Načteno {len(all_data)} firem... (scroll {i+1}/{scroll_attempts})'
+            # KROK 2: Projít detail každé firmy
+            for idx, company in enumerate(company_details[:max_companies], 1):
+                scraping_status['message'] = f'🔍 Zpracovávám {idx}/{min(len(company_details), max_companies)}: {company["name"]}'
+                
+                website = None
+                email = None
+                
+                try:
+                    # Otevřít detail firmy
+                    driver.get(company['url'])
+                    time.sleep(2)
+                    
+                    detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
+                    
+                    # Hledat web - všechny externí linky
+                    for link in detail_soup.find_all('a', href=True):
+                        href = link.get('href', '')
+                        
+                        # Najít web link (mimo Panorama a social media)
+                        if (href.startswith('http') and 
+                            'panoramafirm.pl' not in href and
+                            '/firma/' not in href and
+                            'facebook.com' not in href and
+                            'linkedin.com' not in href and
+                            'instagram.com' not in href and
+                            'twitter.com' not in href and
+                            'youtube.com' not in href):
+                            website = href
+                            break
+                    
+                    # Hledat email na celé stránce
+                    all_emails = EMAIL_PATTERN.findall(driver.page_source)
+                    for potential_email in all_emails:
+                        # Filtrovat nerelevantní emaily
+                        if not any(skip in potential_email.lower() for skip in ['example', 'test@', 'noreply', '@panorama', '@google', '@facebook']):
+                            email = potential_email
+                            break
+                    
+                except Exception as e:
+                    scraping_status['message'] = f'⚠️ Chyba u {company["name"]}: {str(e)}'
+                    time.sleep(1)
+                
+                all_data.append({
+                    'name': company['name'],
+                    'website': website or '',
+                    'email': email or ''
+                })
             
-            # Pokud máme dost, přestaň
-            if len(all_data) >= max_companies:
-                break
-        
-        # Vrátit jen požadovaný počet
-        return all_data[:max_companies]
+            return all_data
         
     except Exception as e:
         scraping_status['message'] = f'❌ Chyba: {str(e)}'
