@@ -404,14 +404,17 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     detail_soup = BeautifulSoup(html, 'html.parser')
                     del html  # Uvolnit paměť
                     
-                    # Hledat web - všechny externí linky
+                    # Hledat web - všechny externí linky (IGNOROVAT mapy a social media)
                     for link in detail_soup.find_all('a', href=True):
                         href = link.get('href', '')
                         
-                        # Najít web link (mimo Panorama a social media)
+                        # Najít web link - POUZE skutečný web firmy
                         if (href.startswith('http') and 
                             'panoramafirm.pl' not in href and
                             '/firma/' not in href and
+                            'openstreetmap.org' not in href and  # Ignorovat mapu
+                            'maps.google' not in href and
+                            'google.com/maps' not in href and
                             'facebook.com' not in href and
                             'linkedin.com' not in href and
                             'instagram.com' not in href and
@@ -430,8 +433,12 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                             logger.info(f"  Nalezen email: {email}")
                             break
                     
+                    # Pokud web nenalezen, neukládat firmu
                     if not website:
-                        logger.info(f"  Web nenalezen")
+                        logger.info(f"  ⚠️ Web nenalezen - přeskakuji firmu")
+                        continue
+                    
+                    # Pokud email nenalezen, vypsat varování ale firmu ULOŽIT
                     if not email:
                         logger.info(f"  Email nenalezen")
                     
@@ -439,12 +446,15 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     logger.error(f"  Chyba při zpracování {company['name']}: {str(e)}")
                     scraping_status['message'] = f'⚠️ Chyba u {company["name"]}: {str(e)}'
                     time.sleep(1)
+                    continue  # Přeskočit firmu při chybě
                 
-                all_data.append({
-                    'name': company['name'],
-                    'website': website or '',
-                    'email': email or ''
-                })
+                # ULOŽIT pouze firmy S WEBEM (email je optional)
+                if website:
+                    all_data.append({
+                        'name': company['name'],
+                        'website': website,
+                        'email': email or ''
+                    })
                 
                 # DŮLEŽITÉ: Restartovat Chrome po KAŽDÉ firmě (512MB RAM!)
                 if idx < min(len(company_details), max_companies):
