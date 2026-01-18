@@ -305,51 +305,70 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 # Panorama Firm - celý záznam s webem a emailem
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
                 
-                # DEBUG: Uložit HTML pro analýzu
+                # DEBUG: Analyzovat strukturu stránky
                 if i == 0:  # První scroll
-                    with open('/tmp/panorama_debug.html', 'w', encoding='utf-8') as f:
-                        f.write(soup.prettify())
-                    print("DEBUG: HTML uloženo do /tmp/panorama_debug.html")
+                    print("\n=== DEBUG PANORAMA HTML ===")
+                    # Najít všechny h2 tagy (názvy firem)
+                    h2_tags = soup.find_all('h2')
+                    print(f"Celkem H2 tagů: {len(h2_tags)}")
+                    
+                    # Vypsat první 3 h2 tagy
+                    for idx, h2 in enumerate(h2_tags[:3]):
+                        print(f"\nH2 #{idx+1}:")
+                        print(f"  Text: {h2.get_text(strip=True)}")
+                        print(f"  Class: {h2.get('class')}")
+                        print(f"  Parent: {h2.parent.name if h2.parent else 'None'}")
+                        print(f"  Parent class: {h2.parent.get('class') if h2.parent else 'None'}")
+                    
+                    # Hledat divy s různými třídami
+                    print(f"\nDiv elementy:")
+                    for class_name in ['company', 'firm', 'result', 'listing', 'card', 'item']:
+                        divs = soup.find_all('div', class_=lambda c: c and class_name in str(c).lower() if c else False)
+                        if divs:
+                            print(f"  Div s '{class_name}': {len(divs)}")
+                    
+                    print("=========================\n")
                 
-                # Zkusit různé možné struktury
-                companies_found = 0
+                # Extrakce dat - zkusit h2 elementy
+                h2_tags = soup.find_all('h2')
                 
-                # Možnost 1: Hledat všechny <article> elementy
-                articles = soup.find_all('article')
-                print(f"DEBUG: Nalezeno {len(articles)} article elementů")
-                
-                for article in articles:
-                    # Název - hledat v h2 nebo h3
-                    name_elem = article.find('h2') or article.find('h3')
-                    if name_elem:
-                        name = name_elem.get_text(strip=True)
+                for h2 in h2_tags:
+                    # Získat název
+                    a_tag = h2.find('a')
+                    if a_tag:
+                        name = a_tag.get_text(strip=True)
                     else:
-                        # Zkusit najít link s třídou obsahující "name" nebo "company"
-                        name_link = article.find('a', class_=lambda c: c and ('name' in str(c).lower() or 'company' in str(c).lower()) if c else False)
-                        if name_link:
-                            name = name_link.get_text(strip=True)
-                        else:
-                            continue
+                        name = h2.get_text(strip=True)
                     
                     # Filtrovat nerelevantní názvy
-                    if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie'):
+                    if not name or name in seen_names or name.startswith('Wyniki') or name.startswith('Jakie') or len(name) < 3:
                         continue
                     
                     website = None
                     email = None
                     
-                    # Hledat web - link začínající http ale ne /firma/
-                    for link in article.find_all('a', href=True):
-                        href = link.get('href', '')
-                        if href.startswith('http') and '/firma/' not in href:
-                            website = href
+                    # Najít nejbližší parent div nebo article
+                    parent = h2.parent
+                    search_depth = 0
+                    while parent and search_depth < 5:
+                        if parent.name in ['div', 'article', 'section']:
                             break
+                        parent = parent.parent
+                        search_depth += 1
                     
-                    # Hledat email v celém textu
-                    text = article.get_text()
-                    email_match = EMAIL_PATTERN.search(text)
-                    if email_match:
-                        email = email_match.group(0)
+                    if parent:
+                        # Hledat web - jakýkoliv http link kromě /firma/
+                        for link in parent.find_all('a', href=True):
+                            href = link.get('href', '')
+                            if href.startswith('http') and '/firma/' not in href and 'panoramafirm.pl' not in href:
+                                website = href
+                                break
+                        
+                        # Hledat email
+                        text = parent.get_text()
+                        email_match = EMAIL_PATTERN.search(text)
+                        if email_match:
+                            email = email_match.group(0)
                     
                     all_data.append({
                         'name': name,
@@ -357,9 +376,6 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         'email': email or ''
                     })
                     seen_names.add(name)
-                    companies_found += 1
-                
-                print(f"DEBUG: Extrahováno {companies_found} firem z article elementů")
             
             scraping_status['message'] = f'📂 Načteno {len(all_data)} firem... (scroll {i+1}/{scroll_attempts})'
             
