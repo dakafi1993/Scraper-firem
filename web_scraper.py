@@ -335,16 +335,24 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     article_tags = soup.find_all('article')
                     logger.info(f"Celkem article tagů: {len(article_tags)}")
                     
-                    divs_with_firma = soup.find_all('div', class_=lambda c: c and any('firma' in str(x).lower() for x in c) if c else False)
-                    logger.info(f"Divů s 'firma' v třídě: {len(divs_with_firma)}")
+                    # Hledat linky obsahující názvy firem (jakýkoliv href)
+                    first_h2 = all_h2[0] if all_h2 else None
+                    if first_h2:
+                        # Najít nejbližší <a> tag k prvnímu H2
+                        parent = first_h2.parent
+                        for level in range(5):
+                            if parent:
+                                all_links = parent.find_all('a', href=True)
+                                if all_links:
+                                    logger.info(f"Na úrovni {level} nad H2 našel {len(all_links)} linků:")
+                                    for link in all_links[:3]:
+                                        logger.info(f"  - href={link.get('href')[:80]}, text='{link.get_text(strip=True)[:30]}'")
+                                    break
+                                parent = parent.parent
                     
-                    # Hledat linky na /firma/
-                    firma_links = soup.find_all('a', href=lambda h: h and '/firma/' in h)
-                    logger.info(f"Linků na /firma/: {len(firma_links)}")
-                    if firma_links:
-                        logger.info(f"První link: {firma_links[0].get('href')}")
                     logger.info("=== KONEC DEBUG ===")
                 
+                # NOVÁ STRATEGIE: Použít H2 přímo a najít odkaz v nadřazeném elementu
                 h2_elements = soup.find_all('h2', class_=lambda c: c and 'text-h1' in c if c else False)
                 
                 for h2 in h2_elements:
