@@ -312,19 +312,26 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     email = None
                     
                     if parent:
-                        # Hledat web - ikona "website icon blue"
-                        web_link = parent.find('a', href=True, title=lambda t: t and 'www' in t.lower() if t else False)
-                        if not web_link:
-                            web_link = parent.find('a', class_=lambda c: c and 'website' in str(c).lower() if c else False)
-                        if web_link and web_link.get('href'):
-                            website = web_link['href']
+                        # Hledat web - JAKÝKOLIV link s http
+                        all_links = parent.find_all('a', href=True)
+                        for link in all_links:
+                            href = link.get('href', '')
+                            # Pokud obsahuje http a není to panoramafirm
+                            if href.startswith('http') and 'panoramafirm.pl' not in href:
+                                website = href
+                                break
                         
                         # Hledat VŠECHNY emaily v textu
                         text = parent.get_text()
                         email_matches = EMAIL_PATTERN.findall(text)
                         if email_matches:
-                            # Spojit všechny nalezené emaily čárkou
-                            email = ', '.join(email_matches)
+                            # Filtrovat jen validní emaily
+                            valid_emails = []
+                            for em in email_matches:
+                                if '@' in em and '.' in em.split('@')[1]:
+                                    valid_emails.append(em)
+                            if valid_emails:
+                                email = ', '.join(valid_emails)
                     
                     all_data.append({
                         'name': name,
