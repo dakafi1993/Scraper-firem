@@ -36,12 +36,17 @@ scraping_status = {
 }
 
 CATEGORIES = {
-    # PANORAMA FIRM - Przemysł i energetyka (všechny podkategorie)
+    # DEMO VERZE - Pouze 2 kategorie (po zaplacení odkomentujte zbytek)
+    'panorama_https://panoramafirm.pl/aerozole': 'PANORAMA: Aerozole',
+    'panorama_https://panoramafirm.pl/agregaty_pr%C4%85dotw%C3%B3rcze': 'PANORAMA: Agregaty prądotwórcze',
+}
+
+# Po zaplacení odkomentujte všechny kategorie níže a smažte řádek výše s }
+"""
+CATEGORIES = {
     'panorama_https://panoramafirm.pl/aerozole': 'PANORAMA: Aerozole',
     'panorama_https://panoramafirm.pl/agregaty_pr%C4%85dotw%C3%B3rcze': 'PANORAMA: Agregaty prądotwórcze',
     'panorama_https://panoramafirm.pl/agregaty_komory_i_meble_ch%C5%82odnicze': 'PANORAMA: Agregaty, komory i meble chłodnicze',
-    'panorama_https://panoramafirm.pl/akumulatory_i_baterie': 'PANORAMA: Akumulatory i baterie',
-    'panorama_https://panoramafirm.pl/armatura_hydrauliczna': 'PANORAMA: Armatura hydrauliczna',
     'panorama_https://panoramafirm.pl/armatura_przemys%C5%82owa': 'PANORAMA: Armatura przemysłowa',
     'panorama_https://panoramafirm.pl/artyku%C5%82y_elektrotechniczne': 'PANORAMA: Artykuły elektrotechniczne',
     'panorama_https://panoramafirm.pl/artyku%C5%82y_metalowe': 'PANORAMA: Artykuły metalowe',
