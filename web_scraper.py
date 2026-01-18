@@ -318,11 +318,12 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         if web_link and web_link.get('href'):
                             website = web_link['href']
                         
-                        # Hledat email v textu
+                        # Hledat VŠECHNY emaily v textu
                         text = parent.get_text()
-                        email_match = EMAIL_PATTERN.search(text)
-                        if email_match:
-                            email = email_match.group(0)
+                        email_matches = EMAIL_PATTERN.findall(text)
+                        if email_matches:
+                            # Spojit všechny nalezené emaily čárkou
+                            email = ', '.join(email_matches)
                     
                     all_data.append({
                         'name': name,
@@ -393,12 +394,13 @@ def google_search_email(driver, company_name):
         
         emails = EMAIL_PATTERN.findall(driver.page_source)
         
+        valid_emails = []
         for email in emails:
             skip = ['google.', 'youtube.', 'example.', 'noreply', 'privacy', '@gstatic']
             if not any(skip in email.lower() for skip in skip):
-                return email
+                valid_emails.append(email)
         
-        return None
+        return ', '.join(valid_emails) if valid_emails else None
     except:
         return None
 
@@ -420,9 +422,13 @@ def find_email_on_website(url):
                     text = soup.get_text()
                     emails = EMAIL_PATTERN.findall(text)
                     
+                    valid_emails = []
                     for email in emails:
                         if not any(skip in email.lower() for skip in ['example.', 'test@', 'noreply', 'wix.com', 'domain.']):
-                            return email
+                            valid_emails.append(email)
+                    
+                    if valid_emails:
+                        return ', '.join(valid_emails)
             except:
                 continue
         
