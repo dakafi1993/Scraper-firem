@@ -239,8 +239,8 @@ def setup_driver():
     """Nastavení Chrome driveru"""
     chrome_options = Options()
     
-    # Docker/Server nastavení - OPTIMALIZACE PRO NÍZKOU PAMĚŤ
-    chrome_options.add_argument('--headless=new')  # Nový headless mode
+    # Docker/Server nastavení - MAXIMÁLNÍ OPTIMALIZACE PRO NÍZKOU PAMĚŤ (512MB)
+    chrome_options.add_argument('--headless=new')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-gpu')
@@ -248,7 +248,7 @@ def setup_driver():
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-setuid-sandbox')
     
-    # Snížení paměťové náročnosti
+    # Maximální snížení paměti
     chrome_options.add_argument('--disable-dev-tools')
     chrome_options.add_argument('--disable-background-networking')
     chrome_options.add_argument('--disable-default-apps')
@@ -258,7 +258,15 @@ def setup_driver():
     chrome_options.add_argument('--no-first-run')
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_argument('--disable-permissions-api')
-    chrome_options.add_argument('--single-process')  # KRITICKÉ - jeden proces místo více
+    chrome_options.add_argument('--single-process')
+    
+    # NOVÉ - ještě více úspor paměti
+    chrome_options.add_argument('--disable-images')  # Nenačítat obrázky
+    chrome_options.add_argument('--blink-settings=imagesEnabled=false')
+    chrome_options.add_argument('--disk-cache-size=1')
+    chrome_options.add_argument('--media-cache-size=1')
+    chrome_options.add_argument('--aggressive-cache-discard')
+    chrome_options.add_argument('--disable-application-cache')
     
     # Anti-detection
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
@@ -266,8 +274,8 @@ def setup_driver():
     chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
     
-    # Window size
-    chrome_options.add_argument('--window-size=1920,1080')
+    # Menší okno = méně paměti
+    chrome_options.add_argument('--window-size=800,600')
     chrome_options.add_argument('--start-maximized')
     
     service = Service(ChromeDriverManager().install())
@@ -698,14 +706,22 @@ def scrape_category_thread(category_slug, category_title, max_companies):
         scraping_status['output_file'] = output_file
         scraping_status['excel_file'] = excel_file
         scraping_status['message'] = f'✅ Hotovo! Nalezeno {len(scraping_status["results"])} firem'
+        logger.info(f"=== KONEC SCRAPOVÁNÍ - ÚSPĚCH ===")
         
     except Exception as e:
+        logger.error(f"=== CHYBA BĚHEM SCRAPOVÁNÍ ===", exc_info=True)
         scraping_status['message'] = f'❌ Chyba: {str(e)}'
     
     finally:
+        logger.info("Zavírám Chrome driver...")
         if driver:
-            driver.quit()
+            try:
+                driver.quit()
+                logger.info("Chrome driver zavřen")
+            except Exception as e:
+                logger.error(f"Chyba při zavírání Chrome: {str(e)}")
         scraping_status['running'] = False
+        logger.info(f"=== KONEC SCRAPOVÁNÍ - running=False ===")
 
 @app.route('/')
 def index():
@@ -758,5 +774,8 @@ def download_excel():
     return "Soubor nenalezen", 404
 
 if __name__ == '__main__':
+    logger.info("=== APLIKACE STARTUJE ===")
+    logger.info(f"Počet kategorií: {len(CATEGORIES)}")
     port = int(os.environ.get('PORT', 5000))
+    logger.info(f"Spouštím Flask na portu {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
