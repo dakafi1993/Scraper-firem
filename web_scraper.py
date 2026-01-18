@@ -315,42 +315,13 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
         else:  # panorama
             # KROK 1: Scrollovat a načíst seznam firem s jejich detail URL
             company_details = []
-            scroll_attempts = max_companies // 25 + 2
+            scroll_attempts = 1  # Pouze 1 scroll - na první stránce je obvykle 20-25 firem
             
             for i in range(scroll_attempts):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(3)
+                time.sleep(2)  # Zkráceno z 3s
                 
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
-                
-                # DEBUG - První scroll vypsat HTML strukturu
-                if i == 0:
-                    logger.info("=== DEBUG: HTML STRUKTURA ===")
-                    all_h2 = soup.find_all('h2')
-                    logger.info(f"Celkem H2 tagů na stránce: {len(all_h2)}")
-                    for idx, h2 in enumerate(all_h2[:5], 1):  # První 5 H2
-                        logger.info(f"H2 #{idx}: Text='{h2.get_text(strip=True)[:50]}', Class={h2.get('class')}")
-                    
-                    # Zkusit najít karty firem jinak
-                    article_tags = soup.find_all('article')
-                    logger.info(f"Celkem article tagů: {len(article_tags)}")
-                    
-                    # Hledat linky obsahující názvy firem (jakýkoliv href)
-                    first_h2 = all_h2[0] if all_h2 else None
-                    if first_h2:
-                        # Najít nejbližší <a> tag k prvnímu H2
-                        parent = first_h2.parent
-                        for level in range(5):
-                            if parent:
-                                all_links = parent.find_all('a', href=True)
-                                if all_links:
-                                    logger.info(f"Na úrovni {level} nad H2 našel {len(all_links)} linků:")
-                                    for link in all_links[:3]:
-                                        logger.info(f"  - href={link.get('href')[:80]}, text='{link.get_text(strip=True)[:30]}'")
-                                    break
-                                parent = parent.parent
-                    
-                    logger.info("=== KONEC DEBUG ===")
                 
                 # NOVÁ STRATEGIE: Použít H2 přímo a najít odkaz v nadřazeném elementu
                 h2_elements = soup.find_all('h2', class_=lambda c: c and 'text-h1' in c if c else False)
@@ -380,7 +351,6 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                                     not href.startswith('/kategoria') and
                                     not href.startswith('/branze')):
                                     detail_link = f"https://panoramafirm.pl{href}"
-                                    logger.info(f"Našel link pro '{name[:30]}': {detail_link[:80]}")
                                     break
                             
                             if detail_link:
@@ -413,10 +383,11 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 email = None
                 
                 try:
-                    # Otevřít detail firmy
+                    # Otevřít detail firmy s timeoutem
+                    driver.set_page_load_timeout(10)  # Max 10 sekund
                     driver.get(company['url'])
-                    time.sleep(2)
-                    logger.info(f"  Detail načten: {company['url']}")
+                    time.sleep(1)  # Zkráceno z 2s
+                    logger.info(f"  Detail načten: {company['url'][:80]}")
                     
                     detail_soup = BeautifulSoup(driver.page_source, 'html.parser')
                     
