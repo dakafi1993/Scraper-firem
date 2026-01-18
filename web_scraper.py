@@ -454,29 +454,11 @@ def scrape_category_thread(category_slug, max_companies):
             scraping_status['running'] = False
             return
         
-        # KROK 1: Otevřít stránku a vyřešit Cloudflare
-        scraping_status['message'] = f'🔓 Otevírám {source.upper()} - KLIKNĚTE NA CLOUDFLARE CHECKBOX!'
+        # KROK 1: Otevřít stránku
+        scraping_status['message'] = f'🔓 Otevírám {source.upper()}...'
         
         driver.get(category_url)
-        time.sleep(3)
-        
-        # Čekat na Cloudflare (max 120s)
-        cloudflare_solved = False
-        if 'Verify you are human' in driver.page_source or 'Just a moment' in driver.page_source:
-            for i in range(120):
-                time.sleep(1)
-                scraping_status['message'] = f'⏳ Čekám na Cloudflare... ({i+1}/120s)'
-                if 'Verify you are human' not in driver.page_source and 'Just a moment' not in driver.page_source:
-                    cloudflare_solved = True
-                    scraping_status['message'] = '✅ Cloudflare vyřešena!'
-                    break
-            
-            if not cloudflare_solved:
-                scraping_status['message'] = '❌ Cloudflare timeout - zkuste to znovu'
-                scraping_status['running'] = False
-                return
-        
-        time.sleep(2)
+        time.sleep(5)  # Počkat na načtení stránky
         
         # KROK 2: Načíst firmy
         scraping_status['message'] = f'📂 Načítám firmy z kategorie...'
