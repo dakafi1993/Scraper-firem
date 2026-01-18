@@ -233,7 +233,7 @@ def setup_driver():
     """Nastavení Chrome driveru"""
     chrome_options = Options()
     
-    # Docker/Server nastavení
+    # Docker/Server nastavení - OPTIMALIZACE PRO NÍZKOU PAMĚŤ
     chrome_options.add_argument('--headless=new')  # Nový headless mode
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
@@ -241,6 +241,18 @@ def setup_driver():
     chrome_options.add_argument('--disable-software-rasterizer')
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('--disable-setuid-sandbox')
+    
+    # Snížení paměťové náročnosti
+    chrome_options.add_argument('--disable-dev-tools')
+    chrome_options.add_argument('--disable-background-networking')
+    chrome_options.add_argument('--disable-default-apps')
+    chrome_options.add_argument('--disable-sync')
+    chrome_options.add_argument('--metrics-recording-only')
+    chrome_options.add_argument('--mute-audio')
+    chrome_options.add_argument('--no-first-run')
+    chrome_options.add_argument('--disable-logging')
+    chrome_options.add_argument('--disable-permissions-api')
+    chrome_options.add_argument('--single-process')  # KRITICKÉ - jeden proces místo více
     
     # Anti-detection
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
