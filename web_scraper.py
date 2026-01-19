@@ -19,12 +19,20 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import logging
+import json
+import pickle
 
 # Nastavit logování
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Složka pro uložení progress a výstupů
+OUTPUT_DIR = os.getenv('OUTPUT_DIR', 'output')  # Může být /mnt/data na Render Disk
+PROGRESS_DIR = os.path.join(OUTPUT_DIR, 'progress')
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(PROGRESS_DIR, exist_ok=True)
 
 # Email regex
 EMAIL_PATTERN = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}')
@@ -284,6 +292,37 @@ def setup_driver():
     
     return driver
 
+def save_progress(category, processed_companies, all_results):
+    """Uloží progress do souboru"""
+    progress_file = os.path.join(PROGRESS_DIR, f"{category.replace('/', '_')}_progress.json")
+    data = {
+        'processed_companies': list(processed_companies),
+        'results': all_results,
+        'timestamp': datetime.now().isoformat()
+    }
+    with open(progress_file, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    logger.info(f"Progress uložen: {len(all_results)} výsledků")
+
+def load_progress(category):
+    """Načte progress ze souboru"""
+    progress_file = os.path.join(PROGRESS_DIR, f"{category.replace('/', '_')}_progress.json")
+    if os.path.exists(progress_file):
+        with open(progress_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        logger.info(f"Načten progress: {len(data['results'])} předchozích výsledků")
+        return set(data['processed_companies']), data['results']
+    return set(), []
+
+def clear_progress(category):
+    """Smaže progress soubor"""
+    progress_file = os.path.join(PROGRESS_DIR, f"{category.replace('/', '_')}_progress.json")
+    if os.path.exists(progress_file):
+        os.remove(progress_file)
+        logger.info("Progress smazán - začínám od začátku")
+    
+    return driver
+
 def extract_company_names(driver, category_url, max_companies, source='aleo'):
     """Extrahuje názvy firem z aleo.com nebo panoramafirm.pl
     
@@ -490,12 +529,12 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     time.sleep(1)
                     continue  # Přeskočit firmu při chybě
                 
-                # ULOŽIT pouze firmy S WEBEM (email je optional)
-                if website:
+                # ULOŽIT pouze firmy S WEBEM a EMAILEM
+                if website and email:
                     all_data.append({
                         'name': company['name'],
                         'website': website,
-                        'email': email or ''
+                        'email': email
                     })
                 
                 # DŮLEŽITÉ: Restartovat Chrome po KAŽDÉ firmě (512MB RAM!)
@@ -615,12 +654,35 @@ def scrape_category_thread(category_slug, category_title, max_companies):
     logger.info(f"Slug: {category_slug}")
     logger.info(f"Max firem: {max_companies}")
     
+    # Načíst předchozí progress
+    processed_names, previous_results = load_progress(category_slug)
+    logger.info(f"Již zpracováno firem: {len(processed_names)}")
+    
+    # Zkontrolovat, jestli už je kategorie hotová
+    if len(previous_results) >= max_companies:
+        logger.info(f"⚠️ Kategorie už je kompletně stažená ({len(previous_results)}/{max_companies})")
+        scraping_status['running'] = False
+        scraping_status['progress'] = len(previous_results)
+        scraping_status['total'] = max_companies
+        scraping_status['category'] = category_title
+        scraping_status['results'] = previous_results
+        scraping_status['message'] = f'✅ Kategorie už je stažená! ({len(previous_results)} firem)'
+        
+        # Vytvořit CSV soubory
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        output_file = os.path.join(OUTPUT_DIR, f'panorama_{category_slug.split("/")[-1]}_{timestamp}.csv')
+        df = pd.DataFrame(previous_results)
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        df.to_csv(output_file, index=False, encoding='utf-8-sig')
+        scraping_status['output_file'] = output_file
+        return
+    
     scraping_status['running'] = True
-    scraping_status['progress'] = 0
+    scraping_status['progress'] = len(previous_results)
     scraping_status['total'] = max_companies
     scraping_status['category'] = category_title
-    scraping_status['results'] = []
-    scraping_status['message'] = '🚀 Spouštím Chrome...'
+    scraping_status['results'] = previous_results.copy()
+    scraping_status['message'] = f'🔄 Pokračuji od {len(processed_names)} firem...'
     
     driver = None
     
@@ -688,17 +750,27 @@ def scrape_category_thread(category_slug, category_title, max_companies):
             logger.info("Zpracovávám firmy z Panorama (používám data přímo z extract_company_names)")
             # Panorama - data už jsou z detailů
             for idx, company_data in enumerate(company_names, 1):
+                # Přeskočit již zpracované
+                if company_data['name'] in processed_names:
+                    logger.info(f"[{idx}/{len(company_names)}] Přeskakuji (již zpracováno): {company_data['name']}")
+                    continue
+                
                 scraping_status['current_company'] = company_data['name']
-                scraping_status['progress'] = idx
+                scraping_status['progress'] = len(scraping_status['results']) + 1
                 logger.info(f"[{idx}/{len(company_names)}] {company_data['name']} - Web: {company_data['website']}, Email: {company_data['email']}")
                 
                 # Použít přímo data z Panorama
-                scraping_status['results'].append({
+                result = {
                     'category': category_title,
                     'name': company_data['name'],
                     'website': company_data['website'] or '',
                     'email': company_data['email'] or ''
-                })
+                }
+                scraping_status['results'].append(result)
+                processed_names.add(company_data['name'])
+                
+                # Uložit progress po každé firmě
+                save_progress(category_slug, processed_names, scraping_status['results'])
         else:
             # ALEO - hledat web a email pro každou firmu
             for idx, company_name in enumerate(company_names, 1):
@@ -725,9 +797,20 @@ def scrape_category_thread(category_slug, category_title, max_companies):
         
         # Uložit CSV
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        # Určit číslo části (part) podle počtu předchozích výsledků
+        part_number = 1
+        if len(previous_results) > 0:
+            part_number = (len(previous_results) // 50) + 1  # Každých 50 firem = nová část
+        
         # Vyčistit název souboru - odebrat nepovolené znaky
         safe_filename = category_slug.replace('https://', '').replace('http://', '').replace('/', '_').replace('\\', '_').replace(':', '_')
-        output_file = f'output/{source}_{safe_filename}_{timestamp}.csv'
+        
+        # Přidat číslo části pokud není první
+        if part_number > 1:
+            output_file = os.path.join(OUTPUT_DIR, f'{source}_{safe_filename}_part{part_number}_{timestamp}.csv')
+        else:
+            output_file = os.path.join(OUTPUT_DIR, f'{source}_{safe_filename}_{timestamp}.csv')
         
         os.makedirs('output', exist_ok=True)
         
@@ -774,8 +857,14 @@ def scrape_category_thread(category_slug, category_title, max_companies):
         
         scraping_status['output_file'] = output_file
         scraping_status['excel_file'] = excel_file
-        scraping_status['message'] = f'✅ Hotovo! Nalezeno {len(scraping_status["results"])} firem'
+        
+        if part_number > 1:
+            scraping_status['message'] = f'✅ Part {part_number} hotovo! {len(scraping_status["results"]) - len(previous_results)} nových firem'
+        else:
+            scraping_status['message'] = f'✅ Hotovo! Nalezeno {len(scraping_status["results"])} firem'
+        
         logger.info(f"=== KONEC SCRAPOVÁNÍ - ÚSPĚCH ===")
+        logger.info(f"Part number: {part_number}, Celkem firem: {len(scraping_status['results'])}")
         
     except Exception as e:
         logger.error(f"=== CHYBA BĚHEM SCRAPOVÁNÍ ===", exc_info=True)
@@ -829,6 +918,20 @@ def start_scraping():
 @app.route('/status')
 def get_status():
     return jsonify(scraping_status)
+
+@app.route('/reset_progress', methods=['POST'])
+def reset_progress():
+    """Smaže uložený progress pro kategorii"""
+    try:
+        data = request.get_json()
+        category = data.get('category')
+        
+        if category:
+            clear_progress(category)
+            return jsonify({'status': 'progress cleared'})
+        return jsonify({'error': 'Missing category'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/download')
 def download():
