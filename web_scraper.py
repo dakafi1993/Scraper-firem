@@ -469,7 +469,7 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     html = driver.page_source
                     
                     # Hledat web pomocí regex - rychlejší než BeautifulSoup
-                    # Pattern: href="http..." ale ne panoramafirm, mapy, social media
+                    # Pattern: href="http..." ale ne panoramafirm, mapy, social media, googleapis
                     web_pattern = r'href="(https?://[^"]+)"'
                     web_matches = re.findall(web_pattern, html)
                     
@@ -479,12 +479,15 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                             '/firma/' not in href and
                             'openstreetmap.org' not in href and
                             'maps.google' not in href and
-                            'google.com/maps' not in href and
+                            'google.com' not in href and
+                            'googleapis.com' not in href and
+                            'gstatic.com' not in href and
                             'facebook.com' not in href and
                             'linkedin.com' not in href and
                             'instagram.com' not in href and
                             'twitter.com' not in href and
-                            'youtube.com' not in href):
+                            'youtube.com' not in href and
+                            'wenet.pl' not in href):
                             website = href
                             logger.info(f"  Nalezen web: {website}")
                             break
