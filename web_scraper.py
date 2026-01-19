@@ -438,25 +438,12 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
             logger.info(f"Fáze 1 dokončena: Našel jsem {len(company_details)} firem")
             logger.info(f"Zahajuji Fáze 2: Procházení detailů {min(len(company_details), max_companies)} firem")
             
-            # KROK 2: Projít detail každé firmy - RESTARTOVAT CHROME KAŽDÉ 3 FIRMY
-            batch_size = 3  # Restartovat Chrome po 3 firmách (512MB RAM CRITICAL!)
+            # KROK 2: Projít detail každé firmy - RESTARTOVAT CHROME PO KAŽDÉ FIRMĚ!
+            # CRITICAL: 512MB RAM = musíme restartovat velmi často!
             
             for idx, company in enumerate(company_details[:max_companies], 1):
                 scraping_status['message'] = f'🔍 Zpracovávám {idx}/{min(len(company_details), max_companies)}: {company["name"]}'
                 logger.info(f"[{idx}/{min(len(company_details), max_companies)}] Otevírám detail: {company['name']}")
-                
-                # RESTART CHROME každé 3 firmy (CRITICAL pro 512MB RAM!)
-                if idx > 1 and (idx - 1) % batch_size == 0:
-                    logger.info(f"⚠️ Firma {idx-1} hotová - restartuji Chrome (RAM CRITICAL)")
-                    try:
-                        driver.delete_all_cookies()
-                        driver.quit()
-                    except:
-                        pass
-                    gc.collect()  # Vynutit garbage collection
-                    time.sleep(3)  # Delší čekání pro uvolnění RAM
-                    driver = setup_driver()
-                    logger.info(f"✅ Chrome restartován")
                 
                 website = None
                 email = None
@@ -531,6 +518,19 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         'website': website,
                         'email': email
                     })
+                
+                # RESTART CHROME PO KAŽDÉ FIRMĚ! (512MB RAM CRITICAL)
+                if idx < min(len(company_details), max_companies):
+                    logger.info(f"⚠️ Restartuji Chrome po firmě {idx}")
+                    try:
+                        driver.delete_all_cookies()
+                        driver.quit()
+                    except:
+                        pass
+                    gc.collect()
+                    time.sleep(2)
+                    driver = setup_driver()
+                    logger.info(f"✅ Chrome restartován")
             
             return (all_data, driver)  # Vrátit data I nový driver
         
