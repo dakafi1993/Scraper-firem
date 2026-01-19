@@ -325,12 +325,29 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
             company_details = []
             # Vypočítat počet scrollů podle požadovaného počtu firem
             # Každý scroll načte cca 20-25 firem
-            scroll_attempts = max(10, max_companies // 20 + 3)
+            scroll_attempts = max(15, max_companies // 15 + 5)  # Víc scrollů
             logger.info(f"Plánuji {scroll_attempts} scrollů pro načtení až {max_companies} firem")
             
+            last_height = 0
+            no_change_count = 0
+            
             for i in range(scroll_attempts):
+                # Scroll pomalu dolů
+                current_height = driver.execute_script("return document.body.scrollHeight")
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(2)  # Zkráceno z 3s
+                time.sleep(3)  # Delší čekání pro načtení dynamického obsahu
+                
+                # Kontrola, jestli se stránka změnila
+                new_height = driver.execute_script("return document.body.scrollHeight")
+                if new_height == last_height:
+                    no_change_count += 1
+                    logger.info(f"  Stránka se nezměnila (pokus {no_change_count}/3)")
+                    if no_change_count >= 3:
+                        logger.info("  Dosažen konec stránky - přestávám scrollovat")
+                        break
+                else:
+                    no_change_count = 0
+                last_height = new_height
                 
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
                 
