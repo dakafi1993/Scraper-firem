@@ -276,6 +276,12 @@ def setup_driver():
     chrome_options.add_argument('--aggressive-cache-discard')
     chrome_options.add_argument('--disable-application-cache')
     
+    # CRITICAL pro 512MB RAM - limit Chrome paměti
+    chrome_options.add_argument('--max-old-space-size=256')  # Max 256MB pro V8
+    chrome_options.add_argument('--disable-backing-store-limit')
+    chrome_options.add_argument('--disable-javascript-harmony-shipping')
+    chrome_options.add_argument('--js-flags=--max-old-space-size=256')
+    
     # Anti-detection
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -432,23 +438,23 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
             logger.info(f"Fáze 1 dokončena: Našel jsem {len(company_details)} firem")
             logger.info(f"Zahajuji Fáze 2: Procházení detailů {min(len(company_details), max_companies)} firem")
             
-            # KROK 2: Projít detail každé firmy - RESTARTOVAT CHROME KAŽDÝCH 5 FIREM
-            batch_size = 5  # Restartovat Chrome po 5 firmách (512MB RAM limit!)
+            # KROK 2: Projít detail každé firmy - RESTARTOVAT CHROME KAŽDÉ 3 FIRMY
+            batch_size = 3  # Restartovat Chrome po 3 firmách (512MB RAM CRITICAL!)
             
             for idx, company in enumerate(company_details[:max_companies], 1):
                 scraping_status['message'] = f'🔍 Zpracovávám {idx}/{min(len(company_details), max_companies)}: {company["name"]}'
                 logger.info(f"[{idx}/{min(len(company_details), max_companies)}] Otevírám detail: {company['name']}")
                 
-                # RESTART CHROME každých 5 firem (uvolnění RAM)
+                # RESTART CHROME každé 3 firmy (CRITICAL pro 512MB RAM!)
                 if idx > 1 and (idx - 1) % batch_size == 0:
-                    logger.info(f"⚠️ Firma {idx-1} hotová - restartuji Chrome (RAM 512MB)")
+                    logger.info(f"⚠️ Firma {idx-1} hotová - restartuji Chrome (RAM CRITICAL)")
                     try:
                         driver.delete_all_cookies()
                         driver.quit()
                     except:
                         pass
                     gc.collect()  # Vynutit garbage collection
-                    time.sleep(2)  # Delší čekání pro uvolnění RAM
+                    time.sleep(3)  # Delší čekání pro uvolnění RAM
                     driver = setup_driver()
                     logger.info(f"✅ Chrome restartován")
                 
