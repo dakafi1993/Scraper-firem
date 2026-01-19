@@ -398,6 +398,18 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 
                 if len(company_details) >= max_companies:
                     break
+                
+                # Po každých 3 scrollech zkusit najít tlačítko "Další stránka"
+                if i > 0 and i % 3 == 0:
+                    try:
+                        next_button = driver.find_elements(By.XPATH, "//a[contains(@class, 'pagination') or contains(text(), 'Następna') or contains(text(), 'następna')]")
+                        if next_button:
+                            logger.info(f"  Našel jsem tlačítko 'Další stránka' - klikám...")
+                            next_button[0].click()
+                            time.sleep(3)
+                            logger.info(f"  Přešel jsem na další stránku")
+                    except Exception as e:
+                        logger.info(f"  Tlačítko 'Další' nenalezeno nebo nefunguje: {e}")
             
             logger.info(f"Fáze 1 dokončena: Našel jsem {len(company_details)} firem")
             logger.info(f"Zahajuji Fázi 2: Procházení detailů {min(len(company_details), max_companies)} firem")
