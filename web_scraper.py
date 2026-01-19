@@ -432,14 +432,14 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
             logger.info(f"Fáze 1 dokončena: Našel jsem {len(company_details)} firem")
             logger.info(f"Zahajuji Fáze 2: Procházení detailů {min(len(company_details), max_companies)} firem")
             
-            # KROK 2: Projít detail každé firmy - RESTARTOVAT CHROME KAŽDÝCH 20 FIREM
-            batch_size = 20  # Restartovat Chrome po 20 firmách (512MB RAM limit)
+            # KROK 2: Projít detail každé firmy - RESTARTOVAT CHROME KAŽDÝCH 5 FIREM
+            batch_size = 5  # Restartovat Chrome po 5 firmách (512MB RAM limit!)
             
             for idx, company in enumerate(company_details[:max_companies], 1):
                 scraping_status['message'] = f'🔍 Zpracovávám {idx}/{min(len(company_details), max_companies)}: {company["name"]}'
                 logger.info(f"[{idx}/{min(len(company_details), max_companies)}] Otevírám detail: {company['name']}")
                 
-                # RESTART CHROME každých 20 firem (uvolnění RAM)
+                # RESTART CHROME každých 5 firem (uvolnění RAM)
                 if idx > 1 and (idx - 1) % batch_size == 0:
                     logger.info(f"⚠️ Firma {idx-1} hotová - restartuji Chrome (RAM 512MB)")
                     try:
@@ -448,7 +448,7 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     except:
                         pass
                     gc.collect()  # Vynutit garbage collection
-                    time.sleep(1)
+                    time.sleep(2)  # Delší čekání pro uvolnění RAM
                     driver = setup_driver()
                     logger.info(f"✅ Chrome restartován")
                 
@@ -457,28 +457,27 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 
                 try:
                     # Otevřít detail firmy s timeoutem
-                    driver.set_page_load_timeout(5)  # Max 5 sekund
+                    driver.set_page_load_timeout(3)  # Max 3 sekundy (kratší timeout)
                     try:
                         driver.get(company['url'])
                         logger.info(f"  Detail načten: {company['url'][:80]}")
                     except TimeoutException:
                         logger.warning(f"  Timeout při načítání detailu - pokračuji s částečně načtenou stránkou")
-                    time.sleep(0.3)  # Minimální čekání
+                    time.sleep(0.1)  # Velmi krátké čekání
                     
-                    # Získat HTML a HNED smazat z paměti driveru
+                    # Získat HTML - POUŽÍT REGEX místo BeautifulSoup (úspora RAM!)
                     html = driver.page_source
-                    detail_soup = BeautifulSoup(html, 'html.parser')
-                    del html  # Uvolnit paměť
                     
-                    # Hledat web - všechny externí linky (IGNOROVAT mapy a social media)
-                    for link in detail_soup.find_all('a', href=True):
-                        href = link.get('href', '')
-                        
+                    # Hledat web pomocí regex - rychlejší než BeautifulSoup
+                    # Pattern: href="http..." ale ne panoramafirm, mapy, social media
+                    web_pattern = r'href="(https?://[^"]+)"'
+                    web_matches = re.findall(web_pattern, html)
+                    
+                    for href in web_matches:
                         # Najít web link - POUZE skutečný web firmy
-                        if (href.startswith('http') and 
-                            'panoramafirm.pl' not in href and
+                        if ('panoramafirm.pl' not in href and
                             '/firma/' not in href and
-                            'openstreetmap.org' not in href and  # Ignorovat mapu
+                            'openstreetmap.org' not in href and
                             'maps.google' not in href and
                             'google.com/maps' not in href and
                             'facebook.com' not in href and
@@ -490,14 +489,17 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                             logger.info(f"  Nalezen web: {website}")
                             break
                     
-                    # Hledat email na celé stránce
-                    all_emails = EMAIL_PATTERN.findall(driver.page_source)
+                    # Hledat email pomocí regex
+                    all_emails = EMAIL_PATTERN.findall(html)
                     for potential_email in all_emails:
                         # Filtrovat nerelevantní emaily
                         if not any(skip in potential_email.lower() for skip in ['example', 'test@', 'noreply', '@panorama', '@google', '@facebook']):
                             email = potential_email
                             logger.info(f"  Nalezen email: {email}")
                             break
+                    
+                    del html  # Uvolnit paměť IHNED
+                    gc.collect()  # Garbage collection po každé firmě
                     
                     # Pokud web nenalezen, neukládat firmu
                     if not website:
