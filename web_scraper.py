@@ -332,12 +332,16 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
             
             for page_num in range(1, pages_needed + 1):
                 # Sestavit URL pro konkrétní stránku
+                # Panorama Firm používá: /kategorie/firmy,5.html
                 if page_num == 1:
                     page_url = category_url
                 else:
-                    # Přidat ?page=X nebo &page=X podle toho, jestli už má URL parametry
-                    separator = '&' if '?' in category_url else '?'
-                    page_url = f"{category_url}{separator}page={page_num}"
+                    # Odebrat .html z konce a přidat ,X.html
+                    if category_url.endswith('.html'):
+                        base_url = category_url[:-5]  # Odebrat .html
+                        page_url = f"{base_url}/firmy,{page_num}.html"
+                    else:
+                        page_url = f"{category_url}/firmy,{page_num}.html"
                 
                 logger.info(f"Načítám stránku {page_num}/{pages_needed}: {page_url}")
                 
