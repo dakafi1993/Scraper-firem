@@ -4,6 +4,3 @@ services:
     env: docker
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
-    envVars:
-      - key: PORT
-        value: 8080
