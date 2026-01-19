@@ -22,6 +22,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from webdriver_manager.chrome import ChromeDriverManager
 import logging
+import gc  # Garbage collector pro uvolnění paměti
 
 # Nastavit logování
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -299,7 +300,7 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
     
     Returns:
         - ALEO: list of strings (názvy firem)
-        - PANORAMA: list of dicts {'name': str, 'website': str, 'email': str}
+        - PANORAMA: tuple (list of dicts {'name': str, 'website': str, 'email': str}, driver)
     """
     try:
         # Načíst stránku s timeout ochranou
@@ -429,14 +430,27 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     break
             
             logger.info(f"Fáze 1 dokončena: Našel jsem {len(company_details)} firem")
-            logger.info(f"Zahajuji Fázi 2: Procházení detailů {min(len(company_details), max_companies)} firem")
+            logger.info(f"Zahajuji Fáze 2: Procházení detailů {min(len(company_details), max_companies)} firem")
             
-            # KROK 2: Projít detail každé firmy - PO 1 FIRMĚ (512MB RAM limit)
-            batch_size = 1  # Restartovat Chrome po KAŽDÉ firmě
+            # KROK 2: Projít detail každé firmy - RESTARTOVAT CHROME KAŽDÝCH 20 FIREM
+            batch_size = 20  # Restartovat Chrome po 20 firmách (512MB RAM limit)
             
             for idx, company in enumerate(company_details[:max_companies], 1):
                 scraping_status['message'] = f'🔍 Zpracovávám {idx}/{min(len(company_details), max_companies)}: {company["name"]}'
                 logger.info(f"[{idx}/{min(len(company_details), max_companies)}] Otevírám detail: {company['name']}")
+                
+                # RESTART CHROME každých 20 firem (uvolnění RAM)
+                if idx > 1 and (idx - 1) % batch_size == 0:
+                    logger.info(f"⚠️ Firma {idx-1} hotová - restartuji Chrome (RAM 512MB)")
+                    try:
+                        driver.delete_all_cookies()
+                        driver.quit()
+                    except:
+                        pass
+                    gc.collect()  # Vynutit garbage collection
+                    time.sleep(1)
+                    driver = setup_driver()
+                    logger.info(f"✅ Chrome restartován")
                 
                 website = None
                 email = None
@@ -509,7 +523,7 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         'email': email
                     })
             
-            return all_data
+            return (all_data, driver)  # Vrátit data I nový driver
         
     except Exception as e:
         scraping_status['message'] = f'❌ Chyba: {str(e)}'
@@ -678,7 +692,13 @@ def scrape_category_thread(category_slug, category_title, max_companies):
         scraping_status['message'] = f'📂 Načítám firmy z kategorie...'
         logger.info(f"Volám extract_company_names() pro zdroj: {source}")
         
-        company_names = extract_company_names(driver, category_url, max_companies, source)
+        result = extract_company_names(driver, category_url, max_companies, source)
+        
+        # Pro Panorama vrací tuple (data, driver), pro Aleo jen list
+        if source == 'panorama':
+            company_names, driver = result  # Rozbalit tuple a aktualizovat driver
+        else:
+            company_names = result
         
         logger.info(f"extract_company_names() vrátilo {len(company_names) if company_names else 0} firem")
         
