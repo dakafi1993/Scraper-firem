@@ -401,6 +401,17 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                 logger.info(f"  Stránka {page_num}: Našel jsem {companies_on_page} nových firem (celkem {len(company_details)})")
                 scraping_status['message'] = f'📂 Načteno {len(company_details)} firem... (stránka {page_num}/{pages_needed})'
                 
+                # RESTART CHROME po každé stránce (512MB RAM limit!)
+                if page_num < pages_needed:
+                    logger.info(f"⚠️ Restartuji Chrome po stránce {page_num} (uvolnění RAM)")
+                    try:
+                        driver.quit()
+                    except:
+                        pass
+                    time.sleep(1)
+                    driver = setup_driver()
+                    logger.info(f"✅ Chrome restartován")
+                
                 # Pokud na stránce nejsou žádné firmy, asi jsme na konci
                 if companies_on_page == 0:
                     logger.info(f"  Stránka {page_num} neobsahuje firmy - končím")
