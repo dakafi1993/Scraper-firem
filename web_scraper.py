@@ -323,37 +323,37 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
         else:  # panorama
             # KROK 1: Scrollovat a načíst seznam firem s jejich detail URL
             company_details = []
-            # Vypočítat počet scrollů podle požadovaného počtu firem
-            # Každý scroll načte cca 20-25 firem
-            scroll_attempts = max(15, max_companies // 15 + 5)  # Víc scrollů
-            logger.info(f"Plánuji {scroll_attempts} scrollů pro načtení až {max_companies} firem")
+            seen_names = set()
             
-            last_height = 0
-            no_change_count = 0
+            # NOVÁ STRATEGIE: Načítat stránky přímo přes URL parametr ?page=X
+            # Panorama Firm má 20-25 firem na stránku
+            pages_needed = (max_companies // 20) + 2
+            logger.info(f"Budu načítat {pages_needed} stránek pro získání {max_companies} firem")
             
-            for i in range(scroll_attempts):
-                # Scroll pomalu dolů
-                current_height = driver.execute_script("return document.body.scrollHeight")
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(3)  # Delší čekání pro načtení dynamického obsahu
-                
-                # Kontrola, jestli se stránka změnila
-                new_height = driver.execute_script("return document.body.scrollHeight")
-                if new_height == last_height:
-                    no_change_count += 1
-                    logger.info(f"  Stránka se nezměnila (pokus {no_change_count}/3)")
-                    if no_change_count >= 3:
-                        logger.info("  Dosažen konec stránky - přestávám scrollovat")
-                        break
+            for page_num in range(1, pages_needed + 1):
+                # Sestavit URL pro konkrétní stránku
+                if page_num == 1:
+                    page_url = category_url
                 else:
-                    no_change_count = 0
-                last_height = new_height
+                    # Přidat ?page=X nebo &page=X podle toho, jestli už má URL parametry
+                    separator = '&' if '?' in category_url else '?'
+                    page_url = f"{category_url}{separator}page={page_num}"
+                
+                logger.info(f"Načítám stránku {page_num}/{pages_needed}: {page_url}")
+                
+                try:
+                    driver.get(page_url)
+                    time.sleep(2)
+                except Exception as e:
+                    logger.error(f"Chyba při načítání stránky {page_num}: {e}")
+                    break
                 
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
                 
                 # NOVÁ STRATEGIE: Použít H2 přímo a najít odkaz v nadřazeném elementu
                 h2_elements = soup.find_all('h2', class_=lambda c: c and 'text-h1' in c if c else False)
                 
+                companies_on_page = 0
                 for h2 in h2_elements:
                     name = h2.get_text(strip=True)
                     
@@ -390,26 +390,20 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                     if detail_link and name not in seen_names:
                         company_details.append({'name': name, 'url': detail_link})
                         seen_names.add(name)
+                        companies_on_page += 1
                     elif not detail_link:
                         logger.warning(f"Nenašel jsem link pro firmu: {name[:50]}")
                 
-                scraping_status['message'] = f'📂 Načteno {len(company_details)} firem ze seznamu... (scroll {i+1}/{scroll_attempts})'
-                logger.info(f"Po scrollu {i+1}: Celkem {len(company_details)} firem")
+                logger.info(f"  Stránka {page_num}: Našel jsem {companies_on_page} nových firem (celkem {len(company_details)})")
+                scraping_status['message'] = f'📂 Načteno {len(company_details)} firem... (stránka {page_num}/{pages_needed})'
+                
+                # Pokud na stránce nejsou žádné firmy, asi jsme na konci
+                if companies_on_page == 0:
+                    logger.info(f"  Stránka {page_num} neobsahuje firmy - končím")
+                    break
                 
                 if len(company_details) >= max_companies:
                     break
-                
-                # Po každých 3 scrollech zkusit najít tlačítko "Další stránka"
-                if i > 0 and i % 3 == 0:
-                    try:
-                        next_button = driver.find_elements(By.XPATH, "//a[contains(@class, 'pagination') or contains(text(), 'Następna') or contains(text(), 'następna')]")
-                        if next_button:
-                            logger.info(f"  Našel jsem tlačítko 'Další stránka' - klikám...")
-                            next_button[0].click()
-                            time.sleep(3)
-                            logger.info(f"  Přešel jsem na další stránku")
-                    except Exception as e:
-                        logger.info(f"  Tlačítko 'Další' nenalezeno nebo nefunguje: {e}")
             
             logger.info(f"Fáze 1 dokončena: Našel jsem {len(company_details)} firem")
             logger.info(f"Zahajuji Fázi 2: Procházení detailů {min(len(company_details), max_companies)} firem")
