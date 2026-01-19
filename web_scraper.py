@@ -841,6 +841,11 @@ def start_scraping():
 def get_status():
     return jsonify(scraping_status)
 
+@app.route('/health')
+def health():
+    """Health check endpoint pro Render.com"""
+    return jsonify({'status': 'healthy', 'running': scraping_status.get('running', False)}), 200
+
 @app.route('/download')
 def download():
     if scraping_status['output_file'] and os.path.exists(scraping_status['output_file']):
