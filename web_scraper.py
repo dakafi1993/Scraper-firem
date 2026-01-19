@@ -323,7 +323,10 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
         else:  # panorama
             # KROK 1: Scrollovat a načíst seznam firem s jejich detail URL
             company_details = []
-            scroll_attempts = 1  # Pouze 1 scroll - na první stránce je obvykle 20-25 firem
+            # Vypočítat počet scrollů podle požadovaného počtu firem
+            # Každý scroll načte cca 20-25 firem
+            scroll_attempts = max(10, max_companies // 20 + 3)
+            logger.info(f"Plánuji {scroll_attempts} scrollů pro načtení až {max_companies} firem")
             
             for i in range(scroll_attempts):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
