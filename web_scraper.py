@@ -471,34 +471,31 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                         logger.warning(f"  Timeout při načítání detailu - pokračuji s částečně načtenou stránkou")
                     time.sleep(0.1)  # Velmi krátké čekání
                     
-                    # Získat HTML - POUŽÍT REGEX místo BeautifulSoup (úspora RAM!)
+                    # Získat HTML a parsovat BeautifulSoup
                     html = driver.page_source
+                    detail_soup = BeautifulSoup(html, 'html.parser')
                     
-                    # Hledat web pomocí regex - rychlejší než BeautifulSoup
-                    # Pattern: href="http..." ale ne panoramafirm, mapy, social media, googleapis
-                    web_pattern = r'href="(https?://[^"]+)"'
-                    web_matches = re.findall(web_pattern, html)
-                    
-                    for href in web_matches:
+                    # Hledat web - všechny externí linky (IGNOROVAT mapy a social media)
+                    for link in detail_soup.find_all('a', href=True):
+                        href = link.get('href', '')
+                        
                         # Najít web link - POUZE skutečný web firmy
-                        if ('panoramafirm.pl' not in href and
+                        if (href.startswith('http') and 
+                            'panoramafirm.pl' not in href and
                             '/firma/' not in href and
                             'openstreetmap.org' not in href and
                             'maps.google' not in href and
-                            'google.com' not in href and
-                            'googleapis.com' not in href and
-                            'gstatic.com' not in href and
+                            'google.com/maps' not in href and
                             'facebook.com' not in href and
                             'linkedin.com' not in href and
                             'instagram.com' not in href and
                             'twitter.com' not in href and
-                            'youtube.com' not in href and
-                            'wenet.pl' not in href):
+                            'youtube.com' not in href):
                             website = href
                             logger.info(f"  Nalezen web: {website}")
                             break
                     
-                    # Hledat email pomocí regex
+                    # Hledat email na celé stránce
                     all_emails = EMAIL_PATTERN.findall(html)
                     for potential_email in all_emails:
                         # Filtrovat nerelevantní emaily
@@ -508,6 +505,7 @@ def extract_company_names(driver, category_url, max_companies, source='aleo'):
                             break
                     
                     del html  # Uvolnit paměť IHNED
+                    del detail_soup
                     gc.collect()  # Garbage collection po každé firmě
                     
                     # Pokud web nenalezen, neukládat firmu
