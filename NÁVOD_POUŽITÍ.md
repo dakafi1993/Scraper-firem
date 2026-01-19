@@ -4,9 +4,10 @@
 
 1. **Otevřete aplikaci** ve webovém prohlížeči
 2. **Vyberte kategorii** ze seznamu (např. "Aerozole", "Artykuły chemiczne")
-3. **Klikněte na tlačítko "Začít scraping"**
-4. **Počkejte** na dokončení (aplikace zpracovává firmy postupně)
-5. **Stáhněte výsledky** pomocí tlačítka "Stáhnout CSV"
+3. **Zadejte počet firem** (max 10000)
+4. **Klikněte na tlačítko "Začít scraping"**
+5. **Počkejte** na dokončení (aplikace zpracovává firmy postupně)
+6. **Stáhněte výsledky** pomocí tlačítka "Stáhnout CSV" nebo "Stáhnout Excel"
 
 ---
 
@@ -17,21 +18,21 @@
   - ✉️ **Email** kontakt
   - 🌐 **Web** stránky
 - Uloží **pouze firmy s webem I emailem**
-- Vytvoří **CSV soubor** ke stažení
+- Vytvoří **CSV a Excel soubory** ke stažení
 
 ---
 
 ## 📊 Výstup
 
-**CSV soubor obsahuje 3 sloupce:**
+**CSV a Excel soubory obsahují 4 sloupce:**
 ```
-Název firmy | Web | Email
+Kategorie | Název firmy | Web | Email
 ```
 
 **Příklad:**
 ```
-Bronisław Jackowiak Formy wtryskowe | https://roal-sklep.pl/ | biuro@upph.pl
-"Koh-i-Noor Polska" Sp. z o.o. | http://www.kohinoor.pl | kontakt@wenet.pl
+PANORAMA: Aerozole | Bronisław Jackowiak | https://roal-sklep.pl/ | biuro@upph.pl
+PANORAMA: Aerozole | "Koh-i-Noor Polska" | http://www.kohinoor.pl | kontakt@wenet.pl
 ```
 
 ---
@@ -40,16 +41,18 @@ Bronisław Jackowiak Formy wtryskowe | https://roal-sklep.pl/ | biuro@upph.pl
 
 - **Zpracování trvá čas** - cca 10-30 sekund na jednu firmu
 - **Sledujte progress bar** - ukazuje aktuální stav
-- **Nevypínejte prohlížeč** během scrapingu
+- **Server může spadnout** - to je normální při velkých objemech dat
 - **Firmy bez emailu** se automaticky přeskakují
+- **Při pádu serveru**: Spusťte scraping znovu - stáhne se nová část dat
 
 ---
 
 ## 🎯 Tipy
 
-✅ **Vyberte správnou kategorii** - čím přesnější, tím lepší výsledky  
-✅ **Nechte aplikaci doběhnout** - neklikejte opakovaně na "Začít"  
-✅ **Stahujte ihned** - CSV soubor se smaže po opuštění stránky  
+✅ **Nastavte počet firem 50-100** - bezpečnější pro stabilitu  
+✅ **Velké kategorie rozdělte** - lepší než stahovat 500 firem najednou  
+✅ **Stahujte průběžně** - po každém dokončení  
+✅ **Server spadl?** - Žádný problém, spusťte znovu a stáhněte další část  
 
 ---
 
@@ -60,11 +63,22 @@ Bronisław Jackowiak Formy wtryskowe | https://roal-sklep.pl/ | biuro@upph.pl
 - Zkuste jinou kategorii
 
 **Scraping se zastavil:**
-- Obnovte stránku a zkuste znovu
+- Server pravděpodobně spadl (512MB RAM limit)
+- Stáhněte co se stihlo
+- Spusťte znovu pro další část
 
 **Málo výsledků:**
 - Mnoho firem nemá veřejný email - to je normální
 - Aplikace ukládá JEN firmy s webem i emailem
+
+---
+
+## 💡 Praktické rady
+
+- **Malé kategorie (50-100 firem)**: Obvykle projde na první pokus
+- **Velké kategorie (200+ firem)**: Rozdělte na více běhů
+- **Server spadne často**: Snižte počet firem na 50
+- **CSV vs Excel**: Excel má lepší formátování, CSV je menší
 
 ---
 
