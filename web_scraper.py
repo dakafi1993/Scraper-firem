@@ -50,6 +50,11 @@ scraping_status = {
     'stopped': False
 }
 
+# Povolené sekce (ostatní budou zablokované)
+ACTIVE_SECTIONS = [
+    'Przemysł i energetyka'
+]
+
 CATEGORIES = {
     'panorama_akcesoria_do_komputer%C3%B3w': 'PANORAMA [Biuro]: Akcesoria do komputerów',
     'panorama_artyku%C5%82y_biurowe': 'PANORAMA [Biuro]: Artykuły biurowe',
@@ -2384,14 +2389,17 @@ def download_excel():
 
 @app.route('/api/sections')
 def get_sections():
-    """Vrátí seznam všech hlavních sekcí"""
-    sections = set()
+    """Vrátí seznam všech hlavních sekcí s informací o dostupnosti"""
+    sections = {}
     for name in CATEGORIES.values():
         if name.startswith('PANORAMA ['):
             # Extrahovat název sekce z formátu "PANORAMA [Section]: Category"
             section = name.split('[')[1].split(']')[0]
-            sections.add(section)
-    return jsonify(sorted(list(sections)))
+            sections[section] = {
+                'name': section,
+                'active': section in ACTIVE_SECTIONS
+            }
+    return jsonify([sections[s] for s in sorted(sections.keys())])
 
 @app.route('/api/subcategories/<section>')
 def get_subcategories(section):

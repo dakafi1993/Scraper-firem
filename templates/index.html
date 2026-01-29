@@ -294,29 +294,35 @@
         <h1>🔍 Scraper firem</h1>
         <p class="subtitle">Vyhledávač firem a kontaktů z Panorama Firm</p>
         
-        <!-- PANORAMA Kategorie -->
-        <div class="category-section">
-            <div class="category-header">
-                <span class="category-icon">🏭</span>
-                <span>Panorama Firm - Przemysł i energetyka</span>
-            </div>
-            
-            <!-- Písmenkový filtr -->
-            <div class="alphabet-filter" id="alphabetFilter">
-                <button class="letter-btn active" data-letter="ALL">Vše</button>
-            </div>
-            
-            <div class="categories-grid">
-                {% for slug, name in categories.items() if slug.startswith('panorama_') %}
-                <div class="subcategory-card" data-slug="{{ slug }}">
-                    <div class="subcategory-name">{{ name.replace('PANORAMA: ', '') }}</div>
+        <!-- Výběr hlavní sekce -->
+        <div class="form-group">
+            <label for="mainSection">📂 Vyberte hlavní sekci:</label>
+            <select id="mainSection" onchange="loadSubcategories()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; border: 2px solid #e0e0e0;">
+                <option value="">-- Vyberte sekci --</option>
+            </select>
+        </div>
+        
+        <!-- Podkategorie (zobrazí se po výběru sekce) -->
+        <div id="subcategoriesArea" style="display: none;">
+            <div class="category-section">
+                <div class="category-header">
+                    <span class="category-icon">📋</span>
+                    <span id="sectionTitle">Podkategorie</span>
                 </div>
-                {% endfor %}
+                
+                <!-- Písmenkový filtr -->
+                <div class="alphabet-filter" id="alphabetFilter">
+                    <button class="letter-btn active" data-letter="ALL" onclick="filterByLetter('ALL')">Vše</button>
+                </div>
+                
+                <div class="categories-grid" id="subcategoriesGrid">
+                    <!-- Dynamicky načteno JS -->
+                </div>
             </div>
         </div>
         
         <div class="form-group">
-            <label for="max_companies">Počet firem (max 10000):</label>
+            <label for="max_companies">Počet firem na kategorii (max 10000):</label>
             <input type="number" id="max_companies" name="max_companies" value="10" min="1" max="10000">
         </div>
         
@@ -360,6 +366,113 @@
     <script>
         let statusInterval;
         let selectedCategory = null;
+        let allSubcategories = {};
+        
+        // Načíst seznam sekcí při načtení stránky
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadSections();
+        });
+        
+        // Načíst seznam hlavních sekcí
+        async function loadSections() {
+            try {
+                const response = await fetch('/api/sections');
+                const sections = await response.json();
+                
+                const select = document.getElementById('mainSection');
+                sections.forEach(sectionObj => {
+                    const option = document.createElement('option');
+                    option.value = sectionObj.name;
+                    if (sectionObj.active) {
+                        option.textContent = sectionObj.name;
+                    } else {
+                        option.textContent = `${sectionObj.name} 🔒 (brzy dostupné)`;
+                        option.disabled = true;
+                        option.style.color = '#999';
+                    }
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Chyba při načítání sekcí:', error);
+            }
+        }
+        
+        // Načíst podkategorie pro vybranou sekci
+        async function loadSubcategories() {
+            const section = document.getElementById('mainSection').value;
+            if (!section) {
+                document.getElementById('subcategoriesArea').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/subcategories/${encodeURIComponent(section)}`);
+                allSubcategories = await response.json();
+                
+                // Zobrazit oblast s podkategoriemi
+                document.getElementById('subcategoriesArea').style.display = 'block';
+                document.getElementById('sectionTitle').textContent = `${section} - Podkategorie`;
+                
+                // Vygenerovat grid s podkategoriemi
+                const grid = document.getElementById('subcategoriesGrid');
+                grid.innerHTML = '';
+                
+                Object.entries(allSubcategories).forEach(([slug, name]) => {
+                    const card = document.createElement('div');
+                    card.className = 'subcategory-card';
+                    card.setAttribute('data-slug', slug);
+                    card.setAttribute('data-name', name);
+                    card.innerHTML = `<div class="subcategory-name">${name.replace('PANORAMA [' + section + ']: ', '')}</div>`;
+                    card.onclick = () => selectSubcategory(card);
+                    grid.appendChild(card);
+                });
+                
+                // Inicializovat písmenkový filtr
+                initAlphabetFilter();
+                
+            } catch (error) {
+                console.error('Chyba při načítání podkategorií:', error);
+                alert('Chyba při načítání podkategorií');
+            }
+        }
+        
+        // Vybrat podkategorii
+        function selectSubcategory(card) {
+            // Odebrat předchozí výběr
+            document.querySelectorAll('.subcategory-card').forEach(c => c.classList.remove('selected'));
+            
+            // Označit nový výběr
+            card.classList.add('selected');
+            selectedCategory = card.getAttribute('data-slug');
+            
+            // Aktivovat tlačítko Start
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = false;
+            startBtn.textContent = `🚀 Spustit vyhledávání: ${card.getAttribute('data-name').replace(/^PANORAMA \[.*?\]: /, '')}`;
+        }
+        
+        // Filtrovat podkategorie podle písmene
+        function filterByLetter(letter) {
+            const cards = document.querySelectorAll('.subcategory-card');
+            const buttons = document.querySelectorAll('.letter-btn');
+            
+            // Update aktivního tlačítka
+            buttons.forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-letter') === letter);
+            });
+            
+            // Filtrovat karty
+            cards.forEach(card => {
+                const name = card.querySelector('.subcategory-name').textContent.trim();
+                const firstLetter = name.charAt(0).toUpperCase();
+                
+                if (letter === 'ALL' || firstLetter === letter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
         
         // Inicializace písmenkového filtru
         function initAlphabetFilter() {
@@ -377,11 +490,15 @@
             const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŹŻ'.split('');
             const filterContainer = document.getElementById('alphabetFilter');
             
+            // Vyčistit předchozí tlačítka (kromě "Vše")
+            filterContainer.innerHTML = '<button class="letter-btn active" data-letter="ALL" onclick="filterByLetter(\'ALL\')">Vše</button>';
+            
             alphabet.forEach(letter => {
                 const btn = document.createElement('button');
                 btn.className = 'letter-btn';
                 btn.textContent = letter;
-                btn.dataset.letter = letter;
+                btn.setAttribute('data-letter', letter);
+                btn.onclick = () => filterByLetter(letter);
                 
                 if (!availableLetters.has(letter)) {
                     btn.classList.add('disabled');
@@ -391,54 +508,6 @@
                 filterContainer.appendChild(btn);
             });
         }
-        
-        // Při načtení stránky - přidat event listenery
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inicializovat filtr
-            initAlphabetFilter();
-            
-            const cards = document.querySelectorAll('.subcategory-card');
-            
-            // Click na písmeno filtru
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('letter-btn') && !e.target.classList.contains('disabled')) {
-                    const letter = e.target.dataset.letter;
-                    
-                    // Aktualizovat aktivní tlačítko
-                    document.querySelectorAll('.letter-btn').forEach(btn => btn.classList.remove('active'));
-                    e.target.classList.add('active');
-                    
-                    // Filtrovat kategorie
-                    cards.forEach(card => {
-                        const name = card.querySelector('.subcategory-name').textContent.trim();
-                        const firstLetter = name.charAt(0).toUpperCase();
-                        
-                        if (letter === 'ALL' || firstLetter === letter) {
-                            card.style.display = 'block';
-                        } else {
-                            card.style.display = 'none';
-                        }
-                    });
-                }
-            });
-            
-            // Click na kategorie
-            cards.forEach(card => {
-                card.addEventListener('click', function() {
-                    // Odebrat selected z ostatních
-                    cards.forEach(c => c.classList.remove('selected'));
-                    
-                    // Přidat selected k této kartě
-                    this.classList.add('selected');
-                    selectedCategory = this.dataset.slug;
-                    
-                    // Aktivovat tlačítko
-                    const btn = document.getElementById('startBtn');
-                    btn.disabled = false;
-                    btn.textContent = '🚀 Spustit vyhledávání';
-                });
-            });
-        });
         
         async function startScraping() {
             if (!selectedCategory) {
