@@ -2197,6 +2197,11 @@ def scrape_category_thread(category_slug, category_title, max_companies):
             logger.info("Zpracovávám firmy z Panorama (používám data přímo z extract_company_names)")
             # Panorama - data už jsou z detailů
             for idx, company_data in enumerate(company_names, 1):
+                # Kontrola zrušení
+                if not scraping_status['running']:
+                    logger.info("Scraping zrušen uživatelem")
+                    break
+                    
                 scraping_status['current_company'] = company_data['name']
                 scraping_status['progress'] = len(scraping_status['results']) + 1
                 logger.info(f"[{idx}/{len(company_names)}] {company_data['name']} - Web: {company_data['website']}, Email: {company_data['email']}")
@@ -2212,6 +2217,11 @@ def scrape_category_thread(category_slug, category_title, max_companies):
         else:
             # ALEO - hledat web a email pro každou firmu
             for idx, company_name in enumerate(company_names, 1):
+                # Kontrola zrušení
+                if not scraping_status['running']:
+                    logger.info("Scraping zrušen uživatelem")
+                    break
+                    
                 scraping_status['current_company'] = company_name
                 scraping_status['progress'] = idx
                 
@@ -2370,6 +2380,18 @@ def start_all_scraping():
 @app.route('/status')
 def get_status():
     return jsonify(scraping_status)
+
+@app.route('/cancel', methods=['POST'])
+def cancel_scraping():
+    """Zruší probíhající scraping"""
+    if not scraping_status['running']:
+        return jsonify({'error': 'Žádný scraping neběží'}), 400
+    
+    logger.info("Přijat požadavek na zrušení scrapingu")
+    scraping_status['running'] = False
+    scraping_status['message'] = '⛔ Zrušeno uživatelem'
+    
+    return jsonify({'status': 'cancelled'})
 
 @app.route('/health')
 def health():

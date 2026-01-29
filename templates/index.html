@@ -255,6 +255,22 @@
             box-shadow: 0 10px 25px rgba(56, 239, 125, 0.4);
         }
         
+        .btn-cancel {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            margin-left: 10px;
+            display: none;
+        }
+        
+        .btn-cancel:hover {
+            box-shadow: 0 10px 25px rgba(235, 51, 73, 0.4);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
         .results-summary {
             background: white;
             padding: 20px;
@@ -326,9 +342,14 @@
             <input type="number" id="max_companies" name="max_companies" value="10" min="1" max="10000">
         </div>
         
-        <button class="btn" id="startBtn" onclick="startScraping()" disabled>
-            🚀 Vyberte kategorii a spusťte vyhledávání
-        </button>
+        <div class="button-group">
+            <button class="btn" id="startBtn" onclick="startScraping()" disabled style="flex: 1;">
+                🚀 Vyberte kategorii a spusťte vyhledávání
+            </button>
+            <button class="btn btn-cancel" id="cancelBtn" onclick="cancelScraping()">
+                ⛔ Zrušit
+            </button>
+        </div>
         
         <div class="status-box" id="statusBox">
             <div class="status-text" id="statusMessage">Připraveno...</div>
@@ -517,12 +538,14 @@
             
             const maxCompanies = document.getElementById('max_companies').value;
             const startBtn = document.getElementById('startBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
             const statusBox = document.getElementById('statusBox');
             const downloadBtn = document.getElementById('downloadBtn');
             const downloadExcelBtn = document.getElementById('downloadExcelBtn');
             const resultsSummary = document.getElementById('resultsSummary');
             
             startBtn.disabled = true;
+            cancelBtn.style.display = 'block';
             statusBox.classList.add('active');
             downloadBtn.style.display = 'none';
             downloadExcelBtn.style.display = 'none';
@@ -580,6 +603,7 @@
                 if (!status.running && status.output_file) {
                     clearInterval(statusInterval);
                     startBtn.disabled = false;
+                    document.getElementById('cancelBtn').style.display = 'none';
                     downloadBtn.style.display = 'block';
                     document.getElementById('downloadExcelBtn').style.display = 'block';
                     resultsSummary.style.display = 'block';
@@ -597,10 +621,33 @@
                 if (!status.running && !status.output_file && status.message.includes('❌')) {
                     clearInterval(statusInterval);
                     startBtn.disabled = false;
+                    document.getElementById('cancelBtn').style.display = 'none';
                 }
                 
             } catch (error) {
                 console.error('Chyba při aktualizaci statusu:', error);
+            }
+        }
+        
+        async function cancelScraping() {
+            if (!confirm('Opravdu chcete zrušit probíhající vyhledávání?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/cancel', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const cancelBtn = document.getElementById('cancelBtn');
+                    cancelBtn.style.display = 'none';
+                    document.getElementById('statusMessage').textContent = '⛔ Rušení...';
+                } else {
+                    alert('Chyba při rušení procesu');
+                }
+            } catch (error) {
+                alert('Chyba: ' + error);
             }
         }
         
