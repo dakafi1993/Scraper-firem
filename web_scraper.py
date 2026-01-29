@@ -2147,8 +2147,9 @@ def scrape_category_thread(category_slug, category_title, max_companies):
             logger.info(f"Zdroj: ALEO, URL: {category_url}")
         elif category_slug.startswith('panorama_'):
             source = 'panorama'
-            # Panorama má celý URL ve slugu
-            category_url = category_slug.replace('panorama_', '')
+            # Panorama - vytvoříme plné URL
+            slug = category_slug.replace('panorama_', '')
+            category_url = f"https://panoramafirm.pl/{slug}"
             logger.info(f"Zdroj: PANORAMA, URL: {category_url}")
         else:
             logger.error(f"Neznámý zdroj kategorie: {category_slug}")
