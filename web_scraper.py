@@ -1693,9 +1693,6 @@ CATEGORIES = {
     'panorama_zaopatrzenie_i_wyposa%C5%BCenie_gastronomiczne': 'PANORAMA [Żywność i używki]: Zaopatrzenie i wyposażenie gastronomiczne',
     'panorama_zio%C5%82a_i_przyprawy': 'PANORAMA [Żywność i używki]: Zioła i przyprawy',
     'panorama_%C5%BCywno%C5%9B%C4%87_ekologiczna': 'PANORAMA [Żywność i używki]: Żywność ekologiczna',
-    # Speciální sekce bez podkategorií (přímé seznamy firem)
-    'panorama_biuro_z': 'PANORAMA [Biuro]: Wszystkie firmy',
-    'panorama_kancelaria_o': 'PANORAMA [Kancelaria]: Wszystkie firmy',
 }
 
 

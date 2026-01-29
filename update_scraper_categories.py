@@ -39,11 +39,6 @@ for section_name, categories in CATEGORIES.items():
         
         new_categories_lines.append(f"    '{key}': '{value}',")
 
-# Přidat speciální sekce
-new_categories_lines.append("    # Speciální sekce bez podkategorií (přímé seznamy firem)")
-new_categories_lines.append("    'panorama_biuro_z': 'PANORAMA [Biuro]: Wszystkie firmy',")
-new_categories_lines.append("    'panorama_kancelaria_o': 'PANORAMA [Kancelaria]: Wszystkie firmy',")
-
 # Načíst web_scraper.py
 with open('web_scraper.py', 'r', encoding='utf-8') as f:
     scraper_content = f.read()
